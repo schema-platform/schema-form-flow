@@ -7,7 +7,7 @@
  * - 加载状态、错误追踪
  */
 import { ref } from 'vue'
-import type { FlowApiConfig, FlowGraph } from '@schema-form/flow-shared'
+import type { FlowApiConfig, FlowGraph } from '@schema-platform/flow-shared'
 import {
   collectApiTasks,
   executeQueue,

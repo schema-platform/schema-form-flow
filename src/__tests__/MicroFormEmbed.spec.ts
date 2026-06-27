@@ -11,7 +11,7 @@ vi.mock('qiankun', () => ({
   })),
 }))
 
-vi.mock('@schema-form/platform-shared/qiankun/config', () => ({
+vi.mock('@schema-platform/platform-shared/qiankun/config', () => ({
   APP_CONFIGS: {
     editor: {
       devPort: 5100,

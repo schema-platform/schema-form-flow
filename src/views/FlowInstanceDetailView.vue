@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useFlowInstanceStore } from '../stores/flowInstance.js'
 import { flowApi } from '../api/flowApi.js'
-import type { FlowGraph, ApprovalLogEntry } from '@schema-form/flow-shared'
+import type { FlowGraph, ApprovalLogEntry } from '@schema-platform/flow-shared'
 import {
   StartEventNode,
   EndEventNode,
@@ -260,6 +261,25 @@ function formatDate(dateStr?: string | Date) {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
+async function handleWithdraw() {
+  if (!instance.value) return
+  try {
+    const { value: comment } = await ElMessageBox.prompt('请输入撤回原因（可选）', '撤回流程', {
+      confirmButtonText: '确认撤回',
+      cancelButtonText: '取消',
+      inputPlaceholder: '撤回原因',
+      inputType: 'textarea',
+      type: 'warning',
+    }).catch(() => ({ value: '' }))
+    // User clicked cancel
+    if (comment === undefined) return
+    await store.withdrawInstance(instanceId.value, comment || undefined)
+    ElMessage.success('已撤回')
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '撤回失败')
+  }
+}
+
 </script>
 
 <template>
@@ -268,6 +288,13 @@ function formatDate(dateStr?: string | Date) {
       <!-- Instance info header -->
       <div :class="styles.header">
         <div :class="styles.headerActions">
+          <el-button
+            v-if="instance.status === 'running'"
+            type="warning"
+            @click="handleWithdraw"
+          >
+            撤回
+          </el-button>
           <el-button
             type="primary"
             :loading="exporting"

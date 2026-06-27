@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import type { FlowPermissions, FlowPermissionItem } from '@schema-form/flow-shared'
+import type { FlowPermissions, FlowPermissionItem } from '@schema-platform/flow-shared'
 import UserPicker from './UserPicker.vue'
 import styles from './FlowSettingsDialog.module.scss'
-import FilterTabs from '@schema-form/platform-shared/components/common/FilterTabs.vue'
-import AppDialog from '@schema-form/platform-shared/components/common/AppDialog.vue'
+import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 
 interface SettingsData {
   name: string

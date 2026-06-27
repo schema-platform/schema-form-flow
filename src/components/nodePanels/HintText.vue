@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 withDefaults(defineProps<{
   indent?: boolean

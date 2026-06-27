@@ -11,7 +11,7 @@
 
 import { computed, type Ref } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'
-import type { BpmnNodeConfig } from '@schema-form/flow-shared'
+import type { BpmnNodeConfig } from '@schema-platform/flow-shared'
 
 export type VariableSource = 'env' | 'form' | 'node'
 

@@ -7,36 +7,44 @@
 
     <div v-loading="loading" :class="$style.list">
       <div
-        v-for="task in tasks"
-        :key="task.taskId"
-        :class="[$style.item, $style[task.status]]"
+        v-for="log in logs"
+        :key="log.id"
+        :class="[$style.item, $style[actionToStatus(log.action)]]"
       >
         <div :class="$style.itemHeader">
-          <span :class="$style.nodeName">{{ task.nodeName }}</span>
-          <el-tag :type="getStatusTheme(task.status)" size="small" effect="light">
-            {{ getStatusLabel(task.status) }}
+          <span :class="$style.nodeName">{{ log.nodeName }}</span>
+          <el-tag :type="getActionTheme(log.action)" size="small" effect="light">
+            {{ getActionLabel(log.action) }}
           </el-tag>
         </div>
 
         <div :class="$style.itemBody">
-          <div v-if="task.assignee" :class="$style.assignee">
-            <span :class="$style.label">审批人：</span>
-            <span>{{ task.assignee }}</span>
+          <div v-if="log.operator" :class="$style.assignee">
+            <span :class="$style.label">操作人：</span>
+            <span>{{ log.operator }}</span>
           </div>
-          <div v-if="task.outcome" :class="$style.outcome">
+          <div v-if="actionToOutcome(log.action)" :class="$style.outcome">
             <span :class="$style.label">结果：</span>
-            <el-tag :type="getOutcomeTheme(task.outcome)" size="small" effect="light">
-              {{ getOutcomeLabel(task.outcome) }}
+            <el-tag :type="getOutcomeTheme(actionToOutcome(log.action))" size="small" effect="light">
+              {{ getOutcomeLabel(actionToOutcome(log.action)) }}
             </el-tag>
           </div>
-          <div v-if="task.updatedAt" :class="$style.time">
+          <div v-if="log.comment" :class="$style.commentRow">
+            <span :class="$style.label">意见：</span>
+            <span :class="$style.commentText">{{ log.comment }}</span>
+          </div>
+          <div :class="$style.time">
             <span :class="$style.label">时间：</span>
-            <span>{{ formatTime(task.updatedAt) }}</span>
+            <span>{{ formatTime(String(log.createdAt)) }}</span>
+          </div>
+          <div v-if="log.action === 'approve' || log.action === 'reject'" :class="$style.duration">
+            <span :class="$style.label">耗时：</span>
+            <span>{{ formatDuration(String(log.createdAt), String(log.createdAt)) }}</span>
           </div>
         </div>
       </div>
 
-      <el-empty v-if="!loading && tasks.length === 0" description="暂无审批记录" />
+      <el-empty v-if="!loading && logs.length === 0" description="暂无审批记录" />
     </div>
   </div>
 </template>
@@ -44,35 +52,53 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { flowApi } from '@/api/flowApi'
+import type { ApprovalLogEntry } from '@schema-platform/flow-shared'
 
-interface ApprovalTask {
-  taskId: string
-  nodeId: string
-  nodeName: string
-  status: 'pending' | 'claimed' | 'completed' | 'cancelled'
-  assignee?: string
-  outcome?: string
-  formData?: Record<string, unknown>
-  formSchemaId?: string
-  formPublishId?: string
-  createdAt: string
-  updatedAt: string
-}
+const emit = defineEmits<{
+  (e: 'comment', taskId: string, comment: string): void
+  (e: 'urge', taskId: string): void
+}>()
+
+const commentInput = ref('')
+const commentingTaskId = ref('')
 
 const props = defineProps<{
   instanceId: string
 }>()
 
 const loading = ref(false)
-const tasks = ref<ApprovalTask[]>([])
+const logs = ref<ApprovalLogEntry[]>([])
+
+// Map action types to display status
+function actionToStatus(action: string): string {
+  const map: Record<string, string> = {
+    claim: 'claimed',
+    approve: 'completed',
+    reject: 'completed',
+    'reject-to-node': 'completed',
+    delegate: 'completed',
+    comment: 'completed',
+  }
+  return map[action] ?? action
+}
+
+function actionToOutcome(action: string): string {
+  const map: Record<string, string> = {
+    approve: 'approved',
+    reject: 'rejected',
+    'reject-to-node': 'rejected',
+    delegate: 'delegated',
+  }
+  return map[action] ?? ''
+}
 
 async function fetchApprovalList() {
   if (!props.instanceId) return
 
   loading.value = true
   try {
-    const data = await flowApi.getApprovalList(props.instanceId)
-    tasks.value = data.tasks || []
+    const data = await flowApi.getApprovalLogs(props.instanceId)
+    logs.value = data.items || []
   } finally {
     loading.value = false
   }
@@ -82,24 +108,28 @@ function refresh() {
   fetchApprovalList()
 }
 
-function getStatusTheme(status: string) {
+function getActionTheme(action: string) {
   const map: Record<string, string> = {
-    pending: 'warning',
-    claimed: 'default',
-    completed: 'success',
-    cancelled: 'danger',
+    claim: 'default',
+    approve: 'success',
+    reject: 'danger',
+    'reject-to-node': 'danger',
+    delegate: 'warning',
+    comment: 'info',
   }
-  return map[status] || 'default'
+  return map[action] || 'default'
 }
 
-function getStatusLabel(status: string) {
+function getActionLabel(action: string) {
   const map: Record<string, string> = {
-    pending: '待处理',
-    claimed: '已认领',
-    completed: '已完成',
-    cancelled: '已取消',
+    claim: '认领',
+    approve: '通过',
+    reject: '驳回',
+    'reject-to-node': '驳回至节点',
+    delegate: '委派',
+    comment: '评论',
   }
-  return map[status] || status
+  return map[action] || action
 }
 
 function getOutcomeTheme(outcome: string) {
@@ -123,6 +153,36 @@ function getOutcomeLabel(outcome: string) {
 function formatTime(time: string) {
   if (!time) return '-'
   return new Date(time).toLocaleString()
+}
+
+function formatDuration(start: string, end: string): string {
+  const ms = new Date(end).getTime() - new Date(start).getTime()
+  if (ms < 0) return '-'
+  const minutes = Math.floor(ms / 60000)
+  if (minutes < 60) return `${minutes}分钟`
+  const hours = Math.floor(minutes / 60)
+  const remainMinutes = minutes % 60
+  if (hours < 24) return `${hours}小时${remainMinutes}分钟`
+  const days = Math.floor(hours / 24)
+  const remainHours = hours % 24
+  return `${days}天${remainHours}小时`
+}
+
+function startComment(taskId: string) {
+  commentingTaskId.value = taskId
+  commentInput.value = ''
+}
+
+function cancelComment() {
+  commentingTaskId.value = ''
+  commentInput.value = ''
+}
+
+function submitComment(taskId: string) {
+  if (!commentInput.value.trim()) return
+  emit('comment', taskId, commentInput.value.trim())
+  commentingTaskId.value = ''
+  commentInput.value = ''
 }
 
 watch(() => props.instanceId, () => {
@@ -209,7 +269,8 @@ onMounted(() => {
 
 .assignee,
 .outcome,
-.time {
+.time,
+.duration {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -218,5 +279,30 @@ onMounted(() => {
 .label {
   color: var(--text-color-placeholder);
   min-width: 60px;
+}
+
+.commentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.commentText {
+  color: var(--text-color-regular);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.commentActions {
+  margin-top: 8px;
+}
+
+.commentInput {
+  margin-bottom: 8px;
+}
+
+.commentBtns {
+  display: flex;
+  gap: 8px;
 }
 </style>

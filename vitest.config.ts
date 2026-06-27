@@ -10,9 +10,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(rootDir, 'src'),
-      '@schema-form/platform-shared/components/common/FilterTabs.vue': resolve(rootDir, 'src/__test_stubs__/FilterTabs.vue'),
-      '@schema-form/platform-shared/components/common/AppIcon.vue': resolve(rootDir, 'src/__test_stubs__/AppIcon.vue'),
-      '@schema-form/platform-shared/components/common/AppDialog.vue': resolve(rootDir, 'src/__test_stubs__/AppDialog.vue'),
+      '@schema-platform/platform-shared/components/common/FilterTabs.vue': resolve(rootDir, 'src/__test_stubs__/FilterTabs.vue'),
+      '@schema-platform/platform-shared/components/common/AppIcon.vue': resolve(rootDir, 'src/__test_stubs__/AppIcon.vue'),
+      '@schema-platform/platform-shared/components/common/AppDialog.vue': resolve(rootDir, 'src/__test_stubs__/AppDialog.vue'),
     },
   },
   test: {

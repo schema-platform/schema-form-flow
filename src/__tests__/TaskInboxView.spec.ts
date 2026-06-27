@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import TaskInboxView from '../views/TaskInboxView.vue'
-import type { TaskInstanceData } from '@schema-form/flow-shared'
+import { useFlowInstanceStore } from '../stores/flowInstance'
+import type { TaskInstanceData } from '@schema-platform/flow-shared'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -30,27 +31,24 @@ vi.mock('../api/flowApi', () => ({
     searchUsers: vi.fn(),
     batchApprove: vi.fn(),
     batchReject: vi.fn(),
+    addComment: vi.fn(),
+    urgeTask: vi.fn(),
+    transferTask: vi.fn(),
+    withdrawInstance: vi.fn(),
+    getPublishedFormSchema: vi.fn(),
+    getUpstreamNodeData: vi.fn(),
   },
 }))
 
 import { flowApi } from '../api/flowApi'
 const mockedApi = vi.mocked(flowApi)
 
-// Mock functions for MicroFormEmbed exposed methods
-const mockGetValues = vi.fn().mockResolvedValue({ field1: 'value1' })
-const mockSetValues = vi.fn().mockResolvedValue(undefined)
-const mockValidate = vi.fn().mockResolvedValue(true)
-
-// MicroFormEmbed stub that exposes methods via defineExpose pattern
-const MicroFormEmbedStub = {
-  name: 'MicroFormEmbed',
-  props: ['publishId', 'mode', 'hostMethods', 'initialData', 'editableFields', 'readonlyFields'],
-  template: '<div class="micro-form-embed-stub" />',
-  methods: {
-    getValues: mockGetValues,
-    setValues: mockSetValues,
-    validate: mockValidate,
-  },
+const FlowFormRendererStub = {
+  name: 'FlowFormRenderer',
+  props: ['task', 'publishId', 'formMode', 'editableFields', 'readonlyFields', 'initialData', 'allowedActions'],
+  template: '<div class="flow-form-renderer-stub" />',
+  emits: ['approve', 'reject', 'save', 'delegate', 'transfer'],
+  expose: ['getData', 'validate', 'setData', 'setMode'],
 }
 
 const claimedTaskWithForm: TaskInstanceData = {
@@ -110,25 +108,51 @@ const claimedTaskWithoutForm: TaskInstanceData = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
+const EP_STUBS = {
+  'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', props: ['size', 'type', 'loading', 'text'], emits: ['click'] },
+  'el-input': { template: '<textarea v-if="type===\'textarea\'" /><input v-else />', props: ['modelValue', 'placeholder', 'clearable', 'type', 'rows', 'maxlength', 'showWordLimit'], emits: ['update:modelValue', 'clear', 'keyup'] },
+  'el-checkbox': { template: '<input type="checkbox" />', props: ['modelValue'], emits: ['update:modelValue', 'change'] },
+  'el-tag': { template: '<span><slot /></span>', props: ['type', 'size', 'effect'] },
+  'el-pagination': { template: '<div />', props: ['total', 'pageSize', 'currentPage', 'pageSizes', 'layout'] },
+  'el-form': { template: '<form><slot /></form>', props: ['labelPosition'] },
+  'el-form-item': { template: '<div><slot /></div>', props: ['label'] },
+  'el-select': { template: '<select><slot /></select>', props: ['modelValue', 'placeholder', 'disabled'], emits: ['update:modelValue'] },
+  'el-option': { template: '<option />', props: ['label', 'value'] },
+  'el-empty': { template: '<div class="el-empty-stub" />', props: ['description'] },
+}
+
 describe('TaskInboxView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     mockedApi.getMyTasks.mockResolvedValue({ items: [], total: 0 } as any)
-    // Reset MicroFormEmbed stub methods
-    mockGetValues.mockReset().mockResolvedValue({ field1: 'value1' })
-    mockSetValues.mockReset().mockResolvedValue(undefined)
-    mockValidate.mockReset().mockResolvedValue(true)
+    mockedApi.getPublishedFormSchema.mockResolvedValue({ json: [] } as any)
+    mockedApi.getUpstreamNodeData.mockResolvedValue({} as any)
   })
+
+  function setupTasksResponse(tasks: TaskInstanceData[]) {
+    mockedApi.getMyTasks.mockResolvedValue({ items: tasks, total: tasks.length } as any)
+  }
 
   function createWrapper() {
     return mount(TaskInboxView, {
       global: {
-        directives: {
-          loading: () => {},
-        },
+        directives: { loading: () => {} },
         stubs: {
-          MicroFormEmbed: MicroFormEmbedStub,
+          FlowFormRenderer: FlowFormRendererStub,
+          AppIcon: { template: '<span />' },
+          AppDialog: {
+            template: '<div class="app-dialog-stub"><slot /><slot name="footer" /></div>',
+            props: ['modelValue', 'title', 'width', 'closeOnClickModal'],
+          },
+          FilterTabs: {
+            name: 'FilterTabs',
+            template: '<div class="filter-tabs-stub" />',
+            props: ['modelValue', 'options'],
+            emits: ['update:modelValue'],
+          },
+          UserPicker: { template: '<div />', props: ['modelValue', 'placeholder'] },
+          ...EP_STUBS,
         },
       },
     })
@@ -139,10 +163,10 @@ describe('TaskInboxView', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('displays task list', () => {
+  it('displays task list area', () => {
     const wrapper = createWrapper()
-    expect(wrapper.find('.t-table').exists()).toBe(true)
-    expect(wrapper.find('.t-tabs').exists()).toBe(true)
+    expect(wrapper.find('.filter-tabs-stub').exists()).toBe(true)
+    expect(wrapper.text()).toContain('暂无任务')
   })
 
   it('calls store.fetchMyTasks on mount', () => {
@@ -150,178 +174,132 @@ describe('TaskInboxView', () => {
     expect(mockedApi.getMyTasks).toHaveBeenCalled()
   })
 
-  // ── Form integration tests ──
-
-  it('shows form panel when clicking "完成" on a claimed task with formPublishId', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskWithForm], total: 1 } as any)
+  it('shows FlowFormRenderer when clicking "完成" on a claimed task with formPublishId', async () => {
+    setupTasksResponse([claimedTaskWithForm])
     const wrapper = createWrapper()
     await flushPromises()
 
-    // Switch to claimed tab
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
-    // Find the "完成" button and click it
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     expect(completeBtn).toBeTruthy()
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    // MicroFormEmbed should appear with correct props
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.exists()).toBe(true)
-    expect(formEmbed.props('publishId')).toBe('pub-form-123')
-    expect(formEmbed.props('mode')).toBe('edit')
-    expect(formEmbed.props('initialData')).toEqual({ existing: 'data' })
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.exists()).toBe(true)
+    expect(formRenderer.props('publishId')).toBe('pub-form-123')
+    expect(formRenderer.props('formMode')).toBe('edit')
   })
 
-  it('completes task without form data when task has no formPublishId', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskWithoutForm], total: 1 } as any)
+  it('opens complete dialog when clicking "完成" on a task without formPublishId', async () => {
     mockedApi.completeTask.mockResolvedValue({ ...claimedTaskWithoutForm, status: 'completed' } as any)
+    setupTasksResponse([claimedTaskWithoutForm])
     const wrapper = createWrapper()
     await flushPromises()
 
-    // Switch to claimed tab
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
-    // Click "完成" — should call handleComplete directly (no form panel)
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     expect(completeBtn).toBeTruthy()
     await completeBtn!.trigger('click')
     await flushPromises()
 
-    // No form panel should appear
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.exists()).toBe(false)
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.exists()).toBe(false)
   })
 
   it('closes form panel when clicking "关闭"', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskWithForm], total: 1 } as any)
+    setupTasksResponse([claimedTaskWithForm])
     const wrapper = createWrapper()
     await flushPromises()
 
-    // Switch to claimed tab and open form
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    // Verify form is open
-    expect(wrapper.findComponent({ name: 'MicroFormEmbed' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'FlowFormRenderer' }).exists()).toBe(true)
 
-    // Click "关闭"
     const closeBtn = wrapper.findAll('button').find((b) => b.text() === '关闭')
     expect(closeBtn).toBeTruthy()
     await closeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    // Form panel should be closed
-    expect(wrapper.findComponent({ name: 'MicroFormEmbed' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'FlowFormRenderer' }).exists()).toBe(false)
   })
 
-  // ── Form mode tests ──
-
-  it('passes mode="edit" to MicroFormEmbed for editable form mode', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskWithForm], total: 1 } as any)
+  it('passes formMode="edit" to FlowFormRenderer for editable form mode', async () => {
+    setupTasksResponse([claimedTaskWithForm])
     const wrapper = createWrapper()
     await flushPromises()
 
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.exists()).toBe(true)
-    expect(formEmbed.props('mode')).toBe('edit')
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.exists()).toBe(true)
+    expect(formRenderer.props('formMode')).toBe('edit')
   })
 
-  it('passes mode="view" to MicroFormEmbed for readonly form mode', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskReadonly], total: 1 } as any)
+  it('passes formMode="view" to FlowFormRenderer for readonly form mode', async () => {
+    setupTasksResponse([claimedTaskReadonly])
     const wrapper = createWrapper()
     await flushPromises()
 
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.exists()).toBe(true)
-    expect(formEmbed.props('mode')).toBe('view')
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.exists()).toBe(true)
+    expect(formRenderer.props('formMode')).toBe('view')
   })
 
-  it('passes mode="partial" and editableFields to MicroFormEmbed for partial form mode', async () => {
-    mockedApi.getMyTasks.mockResolvedValue({ items: [claimedTaskPartial], total: 1 } as any)
+  it('passes formMode="partial" and editableFields to FlowFormRenderer for partial form mode', async () => {
+    setupTasksResponse([claimedTaskPartial])
     const wrapper = createWrapper()
     await flushPromises()
 
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.exists()).toBe(true)
-    expect(formEmbed.props('mode')).toBe('partial')
-    expect(formEmbed.props('editableFields')).toEqual(['comment', 'amount'])
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.exists()).toBe(true)
+    expect(formRenderer.props('formMode')).toBe('partial')
+    expect(formRenderer.props('editableFields')).toEqual(['comment', 'amount'])
   })
 
-  it('maps legacy formMode "edit" to mode="edit"', async () => {
+  it('maps legacy formMode "edit" to formMode="edit"', async () => {
     const legacyEditTask: TaskInstanceData = {
       ...claimedTaskWithForm,
       id: 'task-legacy-edit',
       formMode: 'edit',
     }
-    mockedApi.getMyTasks.mockResolvedValue({ items: [legacyEditTask], total: 1 } as any)
+    setupTasksResponse([legacyEditTask])
     const wrapper = createWrapper()
     await flushPromises()
 
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.props('mode')).toBe('edit')
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.props('formMode')).toBe('edit')
   })
 
-  it('defaults to mode="edit" when formMode is undefined', async () => {
+  it('defaults to formMode="edit" when formMode is undefined', async () => {
     const noModeTask: TaskInstanceData = {
       ...claimedTaskWithForm,
       id: 'task-no-mode',
       formMode: undefined,
     }
-    mockedApi.getMyTasks.mockResolvedValue({ items: [noModeTask], total: 1 } as any)
+    setupTasksResponse([noModeTask])
     const wrapper = createWrapper()
     await flushPromises()
 
-    const tabs = wrapper.findComponent({ name: 'TTabs' })
-    await tabs.vm.$emit('update:modelValue', 'claimed')
-    await wrapper.vm.$nextTick()
-
     const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成')
     await completeBtn!.trigger('click')
-    await wrapper.vm.$nextTick()
+    await flushPromises()
 
-    const formEmbed = wrapper.findComponent({ name: 'MicroFormEmbed' })
-    expect(formEmbed.props('mode')).toBe('edit')
+    const formRenderer = wrapper.findComponent({ name: 'FlowFormRenderer' })
+    expect(formRenderer.props('formMode')).toBe('edit')
   })
 })

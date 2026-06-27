@@ -4,10 +4,10 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useFlowInstanceStore } from '../stores/flowInstance.js'
-import type { FlowInstanceStatus } from '@schema-form/flow-shared'
+import type { FlowInstanceStatus } from '@schema-platform/flow-shared'
 import styles from './FlowInstanceListView.module.scss'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
-import FilterTabs from '@schema-form/platform-shared/components/common/FilterTabs.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 
 const router = useRouter()
 const store = useFlowInstanceStore()

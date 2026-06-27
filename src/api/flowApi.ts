@@ -6,6 +6,12 @@ import type {
   CompleteTaskDto,
   DelegateTaskDto,
   RejectToNodeDto,
+  AddCommentDto,
+  UrgeTaskDto,
+  WithdrawInstanceDto,
+  TransferTaskDto,
+  AddApproverDto,
+  RemoveApproverDto,
   RejectTargetNode,
   FlowListQuery,
   FlowInstanceQuery,
@@ -31,7 +37,7 @@ import type {
   FlowMonitorTimeRange,
   BatchResult,
   UpstreamNodeData,
-} from '@schema-form/flow-shared'
+} from '@schema-platform/flow-shared'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
 
@@ -168,6 +174,12 @@ export const flowApi = {
   resumeInstance: (id: string) =>
     request<FlowInstanceData>(`/flow-instances/${id}/resume`, { method: 'POST' }),
 
+  withdrawInstance: (id: string, data?: WithdrawInstanceDto) =>
+    request<FlowInstanceData>(`/flow-instances/${id}/withdraw`, {
+      method: 'POST',
+      body: JSON.stringify(data ?? {}),
+    }),
+
   // Tasks
   getMyTasks: (page?: number, pageSize?: number, opts?: { status?: string; q?: string }) => {
     const params = new URLSearchParams()
@@ -179,7 +191,7 @@ export const flowApi = {
   },
 
   getApprovalList: (instanceId: string) =>
-    request<{ tasks: Array<{ taskId: string; nodeId: string; nodeName: string; status: 'pending' | 'claimed' | 'completed' | 'cancelled'; assignee?: string; outcome?: string; formData?: Record<string, unknown>; formSchemaId?: string; formPublishId?: string; createdAt: string; updatedAt: string }> }>(`/flow-tasks/approval-list?instanceId=${instanceId}`),
+    request<{ tasks: Array<{ taskId: string; nodeId: string; nodeName: string; status: 'pending' | 'claimed' | 'completed' | 'cancelled'; assignee?: string; outcome?: string; comment?: string; formData?: Record<string, unknown>; formSchemaId?: string; formPublishId?: string; createdAt: string; updatedAt: string }> }>(`/flow-tasks/approval-list?instanceId=${instanceId}`),
 
   getTask: (id: string) => request<TaskInstanceData>(`/flow-tasks/${id}`),
 
@@ -198,6 +210,24 @@ export const flowApi = {
       body: JSON.stringify(data),
     }),
 
+  transferTask: (id: string, data: TransferTaskDto) =>
+    request<TaskInstanceData>(`/flow-tasks/${id}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  addApprover: (taskId: string, data: AddApproverDto) =>
+    request<TaskInstanceData>(`/flow-tasks/${taskId}/add-approver`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  removeApprover: (taskId: string, data: RemoveApproverDto) =>
+    request<TaskInstanceData>(`/flow-tasks/${taskId}/remove-approver`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   getUpstreamNodeData: (taskId: string) =>
     request<UpstreamNodeData>(`/flow-tasks/${taskId}/upstream-data`),
 
@@ -208,6 +238,18 @@ export const flowApi = {
     request<TaskInstanceData>(`/flow-tasks/${id}/reject-to-node`, {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  addComment: (taskId: string, data: AddCommentDto) =>
+    request<{ id: string }>(`/flow-tasks/${taskId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  urgeTask: (taskId: string, data?: UrgeTaskDto) =>
+    request<{ id: string }>(`/flow-tasks/${taskId}/urge`, {
+      method: 'POST',
+      body: JSON.stringify(data ?? {}),
     }),
 
   // Users - 支持分页

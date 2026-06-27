@@ -97,6 +97,13 @@ describe('FlowStatsView', () => {
             template: '<div class="el-date-picker"></div>',
             props: ['modelValue', 'type', 'rangeSeparator', 'startPlaceholder', 'endPlaceholder', 'size', 'valueFormat'],
           },
+          FilterTabs: {
+            name: 'FilterTabs',
+            template: '<div class="filter-tabs-stub">{{ options.map(o => o.label).join(" ") }}</div>',
+            props: ['modelValue', 'options'],
+            emits: ['update:modelValue'],
+          },
+          AppIcon: { template: '<span />' },
         },
         directives: {
           loading: () => {},

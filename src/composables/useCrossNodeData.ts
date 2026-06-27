@@ -7,8 +7,8 @@
  */
 
 import { ref, computed } from 'vue'
-import { resolveCrossNodeValues, collectReferencedNodeIds } from '@schema-form/flow-shared'
-import type { NodeFormDataMap } from '@schema-form/flow-shared'
+import { resolveCrossNodeValues, collectReferencedNodeIds } from '@schema-platform/flow-shared'
+import type { NodeFormDataMap } from '@schema-platform/flow-shared'
 import { flowApi } from '../api/flowApi.js'
 
 export function useCrossNodeData() {

@@ -250,8 +250,10 @@ async function handleDelegate() {
   try {
     await flowApi.delegateTask(task.value.id, {
       targetUserId: delegateAssignee.value,
+      comment: delegateComment.value || undefined,
     })
     showDelegateDialog.value = false
+    delegateComment.value = ''
     await loadTask()
   } catch (err) {
     console.error('Failed to delegate:', err)

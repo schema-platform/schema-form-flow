@@ -37,6 +37,17 @@
   gap: var(--spacing-sm);
   align-items: center;
 }
+.commentSection {
+  padding: var(--spacing-12px) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color-base);
+}
+.overdue {
+  color: var(--color-danger);
+  font-weight: 500;
+}
+.sortSelect {
+  width: 130px;
+}
 .batchToolbar {
   display: flex;
   align-items: center;

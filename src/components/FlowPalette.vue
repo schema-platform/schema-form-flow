@@ -69,9 +69,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { BpmnElementType, DEFAULT_NODE_CONFIGS, DEFAULT_NODE_SIZES } from '@schema-form/flow-shared'
+import { BpmnElementType, DEFAULT_NODE_CONFIGS, DEFAULT_NODE_SIZES } from '@schema-platform/flow-shared'
 import styles from './FlowPalette.module.scss'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 interface PaletteItem {
   type: BpmnElementType

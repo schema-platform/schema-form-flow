@@ -8,8 +8,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { SSOClient } from '@schema-form/platform-shared/utils/sso'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
+import { SSOClient } from '@schema-platform/platform-shared/utils/sso'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const router = useRouter()
 const route = useRoute()

@@ -85,10 +85,10 @@ vi.mock('../components/FlowSettingsDialog.vue', () => ({
 }))
 
 /* ------------------------------------------------------------------ */
-/*  Mocks — @schema-form/flow-shared                                   */
+/*  Mocks — @schema-platform/flow-shared                                   */
 /* ------------------------------------------------------------------ */
 
-vi.mock('@schema-form/flow-shared', () => ({
+vi.mock('@schema-platform/flow-shared', () => ({
   exportToBpmnXml: vi.fn(() => '<xml />'),
   importFromBpmnXml: vi.fn(() => ({ nodes: [], edges: [] })),
   BpmnElementType: {

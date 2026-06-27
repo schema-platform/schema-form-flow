@@ -1,7 +1,7 @@
 import dagre from '@dagrejs/dagre'
 import type { Node, Edge } from '@vue-flow/core'
-import { DEFAULT_NODE_SIZES } from '@schema-form/flow-shared'
-import { BpmnElementType } from '@schema-form/flow-shared'
+import { DEFAULT_NODE_SIZES } from '@schema-platform/flow-shared'
+import { BpmnElementType } from '@schema-platform/flow-shared'
 
 export type LayoutDirection = 'LR' | 'TB'
 

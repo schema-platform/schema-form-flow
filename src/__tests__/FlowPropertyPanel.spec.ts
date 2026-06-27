@@ -11,7 +11,7 @@ vi.mock('element-plus', () => ({
   ElMessage: { success: vi.fn(), error: vi.fn() },
 }))
 
-vi.mock('@schema-form/platform-shared/components/common/AppIcon.vue', () => ({
+vi.mock('@schema-platform/platform-shared/components/common/AppIcon.vue', () => ({
   default: { template: '<span class="app-icon-stub" />', props: ['name', 'size'] },
 }))
 

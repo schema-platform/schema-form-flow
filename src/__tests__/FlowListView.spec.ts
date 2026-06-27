@@ -20,6 +20,18 @@ vi.mock('../api/flowApi', () => ({
 import { flowApi } from '../api/flowApi'
 const mockedApi = vi.mocked(flowApi)
 
+const EP_STUBS = {
+  'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', props: ['size', 'type', 'loading'], emits: ['click'] },
+  'el-input': { template: '<input />', props: ['modelValue', 'placeholder', 'clearable'], emits: ['update:modelValue'] },
+  'el-tag': { template: '<span><slot /></span>', props: ['type', 'size'] },
+  'el-empty': { template: '<div>{{ description }}</div>', props: ['description'] },
+  'el-dialog': { template: '<div v-if="modelValue"><slot /></div>', props: ['modelValue', 'title', 'width'] },
+  'el-form': { template: '<form><slot /></form>', props: ['labelPosition'] },
+  'el-form-item': { template: '<div><slot /></div>', props: ['label'] },
+  'el-select': { template: '<select><slot /></select>', props: ['modelValue'] },
+  'el-option': { template: '<option />', props: ['label', 'value'] },
+}
+
 describe('FlowListView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -33,6 +45,16 @@ describe('FlowListView', () => {
         directives: {
           loading: () => {},
         },
+        stubs: {
+          AppIcon: { template: '<span />' },
+          FilterTabs: {
+            name: 'FilterTabs',
+            template: '<div class="filter-tabs-stub" />',
+            props: ['modelValue', 'options'],
+            emits: ['update:modelValue'],
+          },
+          ...EP_STUBS,
+        },
       },
     })
   }
@@ -42,20 +64,25 @@ describe('FlowListView', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('displays flow list table', () => {
+  it('displays flow list area', () => {
     const wrapper = createWrapper()
-    expect(wrapper.find('.t-table').exists()).toBe(true)
+    expect(wrapper.find('.filter-tabs-stub').exists()).toBe(true)
   })
 
   it('has create button', () => {
     const wrapper = createWrapper()
     const buttons = wrapper.findAll('button')
-    const createBtn = buttons.find((b) => b.text().includes('新建流程'))
-    expect(createBtn).toBeDefined()
+    const createBtn = buttons.find(b => b.text().includes('新建') || b.text().includes('创建'))
+    expect(createBtn).toBeTruthy()
   })
 
-  it('calls store.fetchDefinitions on mount', () => {
+  it('loads flows on mount', () => {
     createWrapper()
     expect(mockedApi.listFlows).toHaveBeenCalled()
+  })
+
+  it('shows empty state when no flows', () => {
+    const wrapper = createWrapper()
+    expect(wrapper.text()).toContain('暂无')
   })
 })

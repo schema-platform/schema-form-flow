@@ -6,7 +6,7 @@ import type {
   TaskInstanceData,
   RejectTargetNode,
   BatchResult,
-} from '@schema-form/flow-shared'
+} from '@schema-platform/flow-shared'
 import { flowApi } from '../api/flowApi.js'
 
 export type FlowInstance = FlowInstanceData & { definitionName?: string | null }
@@ -19,6 +19,7 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
   const tasks = ref<TaskInstance[]>([])
   const tasksTotal = ref(0)
   const loading = ref(false)
+  const lastTaskFilters = ref<{ status?: string; q?: string }>({})
 
   async function fetchInstances(params?: FlowInstanceQuery) {
     loading.value = true
@@ -67,8 +68,17 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
     if (currentInstance.value?.id === id) currentInstance.value = instance
   }
 
+  async function withdrawInstance(id: string, comment?: string) {
+    const instance = await flowApi.withdrawInstance(id, { comment })
+    const idx = instances.value.findIndex((i) => i.id === id)
+    if (idx !== -1) instances.value[idx] = instance
+    if (currentInstance.value?.id === id) currentInstance.value = instance
+    return instance
+  }
+
   async function fetchMyTasks(page = 1, pageSize = 20, opts?: { status?: string; q?: string }) {
     loading.value = true
+    lastTaskFilters.value = { status: opts?.status, q: opts?.q }
     try {
       const data = await flowApi.getMyTasks(page, pageSize, opts)
       tasks.value = data.items
@@ -85,8 +95,37 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
     return task
   }
 
-  async function completeTask(taskId: string, formData?: Record<string, unknown>, outcome?: string) {
-    const task = await flowApi.completeTask(taskId, { formData, outcome })
+  async function completeTask(taskId: string, formData?: Record<string, unknown>, outcome?: string, comment?: string) {
+    const task = await flowApi.completeTask(taskId, { formData, outcome, comment })
+    const idx = tasks.value.findIndex((t) => t.id === taskId)
+    if (idx !== -1) tasks.value[idx] = task
+    return task
+  }
+
+  async function addComment(taskId: string, comment: string) {
+    return flowApi.addComment(taskId, { comment })
+  }
+
+  async function urgeTask(taskId: string, message?: string) {
+    return flowApi.urgeTask(taskId, { message })
+  }
+
+  async function transferTask(taskId: string, targetUserId: string, comment?: string) {
+    const task = await flowApi.transferTask(taskId, { targetUserId, comment })
+    const idx = tasks.value.findIndex((t) => t.id === taskId)
+    if (idx !== -1) tasks.value.splice(idx, 1)
+    return task
+  }
+
+  async function addApprover(taskId: string, userIds: string[], comment?: string) {
+    const task = await flowApi.addApprover(taskId, { userIds, comment })
+    const idx = tasks.value.findIndex((t) => t.id === taskId)
+    if (idx !== -1) tasks.value[idx] = task
+    return task
+  }
+
+  async function removeApprover(taskId: string, userIds: string[], comment?: string) {
+    const task = await flowApi.removeApprover(taskId, { userIds, comment })
     const idx = tasks.value.findIndex((t) => t.id === taskId)
     if (idx !== -1) tasks.value[idx] = task
     return task
@@ -105,14 +144,13 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
 
   async function batchApprove(taskIds: string[]): Promise<BatchResult> {
     const result = await flowApi.batchApprove(taskIds)
-    // Refresh task list after batch operation
-    await fetchMyTasks()
+    await fetchMyTasks(1, 20, lastTaskFilters.value)
     return result
   }
 
   async function batchReject(taskIds: string[], reason?: string): Promise<BatchResult> {
     const result = await flowApi.batchReject(taskIds, reason)
-    await fetchMyTasks()
+    await fetchMyTasks(1, 20, lastTaskFilters.value)
     return result
   }
 
@@ -129,6 +167,7 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
     terminateInstance,
     suspendInstance,
     resumeInstance,
+    withdrawInstance,
     fetchMyTasks,
     claimTask,
     completeTask,
@@ -136,5 +175,10 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
     rejectToNode,
     batchApprove,
     batchReject,
+    addComment,
+    urgeTask,
+    transferTask,
+    addApprover,
+    removeApprover,
   }
 })

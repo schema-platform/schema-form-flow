@@ -177,20 +177,20 @@ import { onMounted, onUnmounted, reactive, ref, watch, nextTick } from 'vue'
 import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Location } from '@element-plus/icons-vue'
-import { connect as connectSocket, onAiApply, onAiPublished } from '@schema-form/platform-shared/socket'
-import type { AiApplyEvent, AiPublishedEvent } from '@schema-form/platform-shared/socket'
+import { connect as connectSocket, onAiApply, onAiPublished } from '@schema-platform/platform-shared/socket'
+import type { AiApplyEvent, AiPublishedEvent } from '@schema-platform/platform-shared/socket'
 import {
   exportToBpmnXml,
   importFromBpmnXml,
   validateFlow,
-} from '@schema-form/flow-shared'
+} from '@schema-platform/flow-shared'
 import type {
   FlowGraph,
   FlowPermissions,
   FlowVersionData,
   RejectPolicy,
   ValidationError,
-} from '@schema-form/flow-shared'
+} from '@schema-platform/flow-shared'
 import type { Node, Edge } from '@vue-flow/core'
 import FlowToolbar from './FlowToolbar.vue'
 import FlowPalette from './FlowPalette.vue'
@@ -206,8 +206,8 @@ import { flowApi } from '../api/flowApi.js'
 import { useFlowTemplateStore } from '../stores/flowTemplate.js'
 import { generateThumbnail } from '../composables/useFlowThumbnail.js'
 import styles from './FlowDesigner.module.scss'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
-import AppDialog from '@schema-form/platform-shared/components/common/AppDialog.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 
 const canvasRef = ref<InstanceType<typeof FlowCanvas>>()
 const store = useFlowDesignerStore()

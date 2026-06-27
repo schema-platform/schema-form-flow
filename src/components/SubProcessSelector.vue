@@ -2,9 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { flowApi } from '../api/flowApi.js'
 import styles from './SubProcessSelector.module.scss'
-import type { FlowDefinitionData } from '@schema-form/flow-shared'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
-import AppDialog from '@schema-form/platform-shared/components/common/AppDialog.vue'
+import type { FlowDefinitionData } from '@schema-platform/flow-shared'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: string
@@ -24,6 +24,10 @@ const flowList = ref<FlowDefinitionData[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const selectedId = ref(props.modelValue)
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
+const hasMore = computed(() => flowList.value.length < total.value)
 
 watch(() => props.modelValue, (val) => {
   selectedId.value = val
@@ -55,14 +59,35 @@ function statusLabel(status: string): string {
   return STATUS_LABELS[status] ?? status
 }
 
-async function loadFlows() {
+async function loadFlows(append = false) {
   loading.value = true
   try {
-    const res = await flowApi.listFlows({ status: 'published', pageSize: 200 })
-    flowList.value = res.items
+    const res = await flowApi.listFlows({
+      status: 'published',
+      search: searchQuery.value || undefined,
+      page: page.value,
+      pageSize: pageSize.value,
+    })
+    if (append) {
+      flowList.value = [...flowList.value, ...res.items]
+    } else {
+      flowList.value = res.items
+    }
+    total.value = res.total
   } finally {
     loading.value = false
   }
+}
+
+function loadMore() {
+  if (!hasMore.value || loading.value) return
+  page.value++
+  loadFlows(true)
+}
+
+function onSearch() {
+  page.value = 1
+  loadFlows(false)
 }
 
 function open() {

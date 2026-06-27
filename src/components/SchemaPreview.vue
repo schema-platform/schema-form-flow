@@ -9,7 +9,6 @@
       <el-form
         ref="formRef"
         :model="formData"
-        :disabled="mode === 'view' || mode === 'readonly'"
         label-width="100px"
       >
         <el-form-item
@@ -23,6 +22,7 @@
             v-if="field.type === 'input'"
             v-model="formData[field.field]"
             :placeholder="field.props?.placeholder"
+            :disabled="isFieldDisabled(field.field)"
           />
 
           <!-- 数字输入框 -->
@@ -31,6 +31,7 @@
             v-model="formData[field.field]"
             :min="field.props?.min"
             :max="field.props?.max"
+            :disabled="isFieldDisabled(field.field)"
           />
 
           <!-- 选择器 -->
@@ -38,6 +39,7 @@
             v-else-if="field.type === 'select'"
             v-model="formData[field.field]"
             :placeholder="field.props?.placeholder"
+            :disabled="isFieldDisabled(field.field)"
           >
             <el-option
               v-for="opt in field.options ?? []"
@@ -53,6 +55,7 @@
             v-model="formData[field.field]"
             type="date"
             :placeholder="field.props?.placeholder"
+            :disabled="isFieldDisabled(field.field)"
           />
 
           <!-- 文本域 -->
@@ -62,6 +65,7 @@
             type="textarea"
             :rows="3"
             :placeholder="field.props?.placeholder"
+            :disabled="isFieldDisabled(field.field)"
           />
 
           <!-- 默认文本显示 -->
@@ -84,9 +88,10 @@ import { flowApi } from '../api/flowApi'
 const props = defineProps<{
   schemaId?: string
   publishId?: string
-  mode?: 'edit' | 'view' | 'readonly'
+  mode?: 'edit' | 'view' | 'readonly' | 'partial'
   initialData?: Record<string, unknown>
   editableFields?: string[]
+  readonlyFields?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -97,6 +102,21 @@ const loading = ref(false)
 const schema = ref<any>(null)
 const formData = ref<Record<string, unknown>>({})
 const formRef = ref<any>(null)
+
+/** Check if a field should be disabled based on mode and editableFields/readonlyFields */
+function isFieldDisabled(field: string): boolean {
+  if (props.mode === 'view' || props.mode === 'readonly') return true
+  if (props.mode === 'partial') {
+    if (props.editableFields?.length) {
+      return !props.editableFields.includes(field)
+    }
+    if (props.readonlyFields?.length) {
+      return props.readonlyFields.includes(field)
+    }
+    return true
+  }
+  return false
+}
 
 const schemaFields = computed(() => {
   if (!schema.value?.json) return []
@@ -138,12 +158,30 @@ async function loadSchema() {
   try {
     if (props.publishId) {
       schema.value = await flowApi.getPublishedFormSchema(props.publishId)
+    } else if (props.schemaId) {
+      // Fetch flow definition to get the schema JSON
+      const flow = await flowApi.getFlow(props.schemaId)
+      // Flow definition may contain schema in its latest version
+      // Try to get the latest version's schema
+      try {
+        const version = await flowApi.getLatestVersion(props.schemaId)
+        schema.value = { json: version.graph?.nodes ? extractSchemaFromGraph(version.graph) : [], name: flow.name }
+      } catch {
+        schema.value = { json: [], name: flow.name }
+      }
     }
   } catch (err) {
     console.error('Failed to load schema:', err)
   } finally {
     loading.value = false
   }
+}
+
+/** Extract form schema from flow graph (placeholder — depends on how forms are stored in graph nodes) */
+function extractSchemaFromGraph(graph: Record<string, unknown>): unknown[] {
+  // The graph contains nodes, each node may have a formSchemaId
+  // For preview purposes, return empty — actual form rendering is done via iframe
+  return []
 }
 
 // 初始化表单数据

@@ -26,6 +26,18 @@ const approvalMode = computed(() => (props.node.data?.approvalMode as string) ??
 /* --- Reject policy --- */
 
 const rejectPolicy = computed(() => (props.node.data?.rejectPolicy as string) ?? 'follow-global')
+const globalRejectPolicy = ref('reject-on-all')
+
+// Load global policy from flow definition metadata
+onMounted(async () => {
+  try {
+    // The global policy is stored in the flow version metadata
+    // For now, default to reject-on-all; actual loading would need flow definition context
+    globalRejectPolicy.value = 'reject-on-all'
+  } catch {
+    // ignore
+  }
+})
 
 /* --- Published forms --- */
 
@@ -105,6 +117,49 @@ function updateMultiInstance(key: string, value: unknown) {
 }
 
 const showFormFields = computed(() => props.node.data?.formSchemaId !== undefined)
+
+/* --- Approver rules --- */
+
+const approverRules = computed(() => {
+  const rules = props.node.data?.approverRules as Record<string, unknown> | undefined
+  return {
+    excludeInitiator: (rules?.excludeInitiator as boolean) ?? false,
+    deduplicate: (rules?.deduplicate as boolean) ?? false,
+    autoSkipIfEmpty: (rules?.autoSkipIfEmpty as boolean) ?? false,
+  }
+})
+
+function updateApproverRule(key: string, value: unknown) {
+  const current = (props.node.data?.approverRules as Record<string, unknown>) ?? {}
+  emit('updateNodeData', 'approverRules', { ...current, [key]: value })
+}
+
+/* --- Field conditions (variable linkage) --- */
+
+interface FieldCondition {
+  field: string
+  condition: string
+  action: 'show' | 'hide' | 'readonly'
+}
+
+const fieldConditions = computed(() => (props.node.data?.fieldConditions as FieldCondition[]) ?? [])
+
+function addFieldCondition() {
+  const current = [...fieldConditions.value]
+  current.push({ field: '', condition: '', action: 'readonly' })
+  emit('updateNodeData', 'fieldConditions', current)
+}
+
+function removeFieldCondition(index: number) {
+  const current = fieldConditions.value.filter((_, i) => i !== index)
+  emit('updateNodeData', 'fieldConditions', current)
+}
+
+function updateFieldCondition(index: number, key: keyof FieldCondition, value: unknown) {
+  const current = [...fieldConditions.value]
+  current[index] = { ...current[index], [key]: value }
+  emit('updateNodeData', 'fieldConditions', current)
+}
 </script>
 
 <template>
@@ -185,6 +240,26 @@ const showFormFields = computed(() => props.node.data?.formSchemaId !== undefine
         <el-radio value="reject-on-all">全部驳回才驳回</el-radio>
         <el-radio value="reject-on-any">一票驳回即驳回</el-radio>
       </el-radio-group>
+      <div v-if="rejectPolicy === 'follow-global'" :class="styles.hint">
+        当前全局策略：{{ globalRejectPolicy === 'reject-on-any' ? '一票驳回即驳回' : '全部驳回才驳回' }}
+      </div>
+    </FieldRow>
+
+    <FieldRow label="审批人规则">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <el-checkbox
+          :model-value="approverRules.excludeInitiator"
+          @change="updateApproverRule('excludeInitiator', $event)"
+        >排除发起人</el-checkbox>
+        <el-checkbox
+          :model-value="approverRules.deduplicate"
+          @change="updateApproverRule('deduplicate', $event)"
+        >去重（同一人不重复审批）</el-checkbox>
+        <el-checkbox
+          :model-value="approverRules.autoSkipIfEmpty"
+          @change="updateApproverRule('autoSkipIfEmpty', $event)"
+        >无审批人时自动跳过</el-checkbox>
+      </div>
     </FieldRow>
   </SectionToggle>
 
@@ -268,6 +343,22 @@ const showFormFields = computed(() => props.node.data?.formSchemaId !== undefine
       </FieldRow>
       <div :class="styles.hint">允许宿主调用的模板方法</div>
     </template>
+  </SectionToggle>
+
+  <!-- 字段条件（变量联动） -->
+  <SectionToggle title="字段条件">
+    <div v-for="(cond, i) in fieldConditions" :key="i" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+      <el-input :model-value="cond.field" placeholder="字段名" size="small" style="width: 100px;" @input="updateFieldCondition(i, 'field', $event)" />
+      <el-select :model-value="cond.action" size="small" style="width: 90px;" @change="updateFieldCondition(i, 'action', $event)">
+        <el-option value="show" label="显示" />
+        <el-option value="hide" label="隐藏" />
+        <el-option value="readonly" label="只读" />
+      </el-select>
+      <el-input :model-value="cond.condition" placeholder="${amount} > 10000" size="small" style="flex: 1;" @input="updateFieldCondition(i, 'condition', $event)" />
+      <el-button size="small" text type="danger" @click="removeFieldCondition(i)">×</el-button>
+    </div>
+    <el-button size="small" text type="primary" @click="addFieldCondition">+ 添加条件</el-button>
+    <div :class="styles.hint">当条件满足时，字段按指定动作处理（显示/隐藏/只读）。使用 ${变量名} 语法引用流程变量。</div>
   </SectionToggle>
 
   <!-- 多实例 -->

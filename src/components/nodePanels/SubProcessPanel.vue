@@ -7,8 +7,8 @@ import HintText from './HintText.vue'
 import SubProcessSelector from '../SubProcessSelector.vue'
 import { flowApi } from '../../api/flowApi'
 import styles from './SubProcessPanel.module.scss'
-import type { FlowDefinitionData } from '@schema-form/flow-shared'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
+import type { FlowDefinitionData } from '@schema-platform/flow-shared'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const props = defineProps<{ node: Node }>()
 const emit = defineEmits<{ updateNodeData: [key: string, value: unknown] }>()
@@ -205,6 +205,42 @@ const STATUS_LABELS: Record<string, string> = {
 function statusLabel(status: string): string {
   return STATUS_LABELS[status] ?? status
 }
+
+/* --- Task assignment --- */
+
+const assigneeType = computed(() => (props.node.data?.assigneeType as string) ?? 'user')
+
+function onAssigneeTypeChange(val: string) {
+  update('assigneeType', val)
+}
+
+/* --- Timeout --- */
+
+const timeoutValue = computed(() => (props.node.data?.subProcessTimeout as number) ?? 0)
+
+function onTimeoutChange(val: number) {
+  update('subProcessTimeout', val || undefined)
+}
+
+/* --- Timeout action --- */
+
+const timeoutAction = computed(() => (props.node.data?.timeoutAction as string) ?? 'notify')
+
+/* --- Error handling --- */
+
+const errorHandling = computed(() => {
+  const eh = props.node.data?.errorHandling as Record<string, unknown> | undefined
+  return {
+    onError: (eh?.onError as string) ?? 'fail',
+    retryCount: (eh?.retryCount as number) ?? 3,
+    retryDelay: (eh?.retryDelay as number) ?? 10,
+  }
+})
+
+function updateErrorHandling(key: string, value: unknown) {
+  const current = (props.node.data?.errorHandling as Record<string, unknown>) ?? {}
+  emit('updateNodeData', 'errorHandling', { ...current, [key]: value })
+}
 </script>
 
 <template>
@@ -368,5 +404,68 @@ function statusLabel(status: string): string {
         />
       </FieldRow>
     </template>
+  </SectionToggle>
+
+  <!-- 任务分配 -->
+  <SectionToggle title="任务分配">
+    <FieldRow label="指派方式">
+      <el-radio-group :model-value="assigneeType" @change="onAssigneeTypeChange">
+        <el-radio value="user">指定用户</el-radio>
+        <el-radio value="role">指定角色</el-radio>
+        <el-radio value="expression">表达式</el-radio>
+      </el-radio-group>
+    </FieldRow>
+    <div :class="styles['hint-text']">子流程内的任务将按此规则分配负责人。</div>
+  </SectionToggle>
+
+  <!-- 超时配置 -->
+  <SectionToggle title="超时配置">
+    <FieldRow label="超时时间（分钟）">
+      <el-input-number
+        :model-value="timeoutValue"
+        :min="0"
+        :step="30"
+        placeholder="0 表示不限制"
+        @change="onTimeoutChange"
+      />
+    </FieldRow>
+    <FieldRow label="超时动作">
+      <el-radio-group :model-value="timeoutAction" @change="update('timeoutAction', $event)">
+        <el-radio value="notify">仅通知</el-radio>
+        <el-radio value="auto-approve">自动通过</el-radio>
+        <el-radio value="auto-transfer">自动转交</el-radio>
+      </el-radio-group>
+    </FieldRow>
+    <div :class="styles['hint-text']">子流程超过此时间未完成时将自动触发超时处理。设为 0 表示不限制。</div>
+  </SectionToggle>
+
+  <!-- 错误处理 -->
+  <SectionToggle title="错误处理">
+    <FieldRow label="错误策略">
+      <el-radio-group :model-value="errorHandling.onError" @change="updateErrorHandling('onError', $event)">
+        <el-radio value="fail">终止流程</el-radio>
+        <el-radio value="retry">重试</el-radio>
+        <el-radio value="skip">跳过</el-radio>
+      </el-radio-group>
+    </FieldRow>
+    <template v-if="errorHandling.onError === 'retry'">
+      <FieldRow label="重试次数">
+        <el-input-number
+          :model-value="errorHandling.retryCount"
+          :min="1"
+          :max="10"
+          @change="updateErrorHandling('retryCount', $event)"
+        />
+      </FieldRow>
+      <FieldRow label="重试间隔（秒）">
+        <el-input-number
+          :model-value="errorHandling.retryDelay"
+          :min="1"
+          :max="300"
+          @change="updateErrorHandling('retryDelay', $event)"
+        />
+      </FieldRow>
+    </template>
+    <div :class="styles['hint-text']">子流程执行失败时的处理策略。</div>
   </SectionToggle>
 </template>

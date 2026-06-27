@@ -38,6 +38,7 @@ vi.mock('../stores/flowInstance', () => {
     terminateInstance: vi.fn(),
     suspendInstance: vi.fn(),
     resumeInstance: vi.fn(),
+    withdrawInstance: vi.fn(),
   }
   return {
     useFlowInstanceStore: () => mockStore,
@@ -59,6 +60,11 @@ describe('FlowInstanceDetailView', () => {
     return mount(FlowInstanceDetailView, {
       global: {
         stubs: {
+          'el-button': {
+            props: ['type', 'size', 'loading'],
+            template: '<button @click="$emit(\'click\')"><slot /></button>',
+            emits: ['click'],
+          },
           'el-tag': {
             props: ['type', 'size'],
             template: '<span class="el-tag"><slot /></span>',
@@ -292,5 +298,75 @@ describe('FlowInstanceDetailView', () => {
     expect(vm.getNodeClass('completed')).toBe('node-completed')
     expect(vm.getNodeClass('active')).toBe('node-running')
     expect(vm.getNodeClass('waiting')).toBe('node-waiting')
+  })
+
+  it('shows withdraw button when instance is running', async () => {
+    mockStore.currentInstance = {
+      id: 'inst-001',
+      definitionId: 'def-001',
+      versionId: 'ver-001',
+      version: 'v1',
+      status: 'running',
+      variables: {},
+      tokens: [],
+      initiatedBy: 'admin',
+      startedAt: '2026-06-27T10:00:00Z',
+      createdAt: '2026-06-27T10:00:00Z',
+      updatedAt: '2026-06-27T10:00:00Z',
+    }
+
+    const wrapper = createWrapper()
+    await wrapper.vm.$nextTick()
+
+    const buttons = wrapper.findAll('button')
+    const withdrawBtn = buttons.find(b => b.text() === '撤回')
+    expect(withdrawBtn).toBeTruthy()
+  })
+
+  it('hides withdraw button when instance is completed', async () => {
+    mockStore.currentInstance = {
+      id: 'inst-001',
+      definitionId: 'def-001',
+      versionId: 'ver-001',
+      version: 'v1',
+      status: 'completed',
+      variables: {},
+      tokens: [],
+      initiatedBy: 'admin',
+      startedAt: '2026-06-27T10:00:00Z',
+      completedAt: '2026-06-27T12:00:00Z',
+      createdAt: '2026-06-27T10:00:00Z',
+      updatedAt: '2026-06-27T12:00:00Z',
+    }
+
+    const wrapper = createWrapper()
+    await wrapper.vm.$nextTick()
+
+    const buttons = wrapper.findAll('button')
+    const withdrawBtn = buttons.find(b => b.text() === '撤回')
+    expect(withdrawBtn).toBeFalsy()
+  })
+
+  it('hides withdraw button when instance is terminated', async () => {
+    mockStore.currentInstance = {
+      id: 'inst-001',
+      definitionId: 'def-001',
+      versionId: 'ver-001',
+      version: 'v1',
+      status: 'terminated',
+      variables: {},
+      tokens: [],
+      initiatedBy: 'admin',
+      startedAt: '2026-06-27T10:00:00Z',
+      createdAt: '2026-06-27T10:00:00Z',
+      updatedAt: '2026-06-27T10:00:00Z',
+    }
+
+    const wrapper = createWrapper()
+    await wrapper.vm.$nextTick()
+
+    const buttons = wrapper.findAll('button')
+    const withdrawBtn = buttons.find(b => b.text() === '撤回')
+    expect(withdrawBtn).toBeFalsy()
   })
 })

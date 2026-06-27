@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import SchemaSelector from './SchemaSelector.vue'
-import AppDialog from '@schema-form/platform-shared/components/common/AppDialog.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 
 defineProps<{
   formSchemaId?: string

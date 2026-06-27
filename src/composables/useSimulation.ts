@@ -1,5 +1,5 @@
 import { ref, computed, onUnmounted } from 'vue'
-import { BpmnElementType } from '@schema-form/flow-shared'
+import { BpmnElementType } from '@schema-platform/flow-shared'
 import type { Node, Edge } from '@vue-flow/core'
 import { useFlowGraphStore } from '../stores/flowGraph.js'
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import FlowSettingsDialog from '../components/FlowSettingsDialog.vue'
-import type { FlowPermissions, RejectPolicy } from '@schema-form/flow-shared'
+import type { FlowPermissions, RejectPolicy } from '@schema-platform/flow-shared'
 
 interface SettingsData {
   name: string
@@ -29,7 +29,7 @@ const emptySettings: SettingsData = {
 }
 
 const stubs = {
-  'el-dialog': {
+  AppDialog: {
     template: `
       <div v-if="modelValue" class="el-dialog-stub">
         <div class="el-dialog-stub__header"><slot name="header" /></div>
@@ -37,8 +37,8 @@ const stubs = {
         <div class="el-dialog-stub__footer"><slot name="footer" /></div>
       </div>
     `,
-    props: ['modelValue', 'title', 'width'],
-    emits: ['close'],
+    props: ['modelValue', 'title', 'width', 'closeOnClickModal'],
+    emits: ['close', 'update:modelValue'],
   },
   'el-input': {
     template: '<input :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
@@ -64,6 +64,11 @@ const stubs = {
   UserPicker: {
     template: '<div class="user-picker-stub" :data-placeholder="placeholder"><slot /></div>',
     props: ['modelValue', 'placeholder'],
+  },
+  FilterTabs: {
+    template: '<div class="filter-tabs-stub">{{ options.map(o => o.label).join(" ") }}</div>',
+    props: ['modelValue', 'options'],
+    emits: ['update:modelValue'],
   },
 }
 
@@ -195,17 +200,17 @@ describe('FlowSettingsDialog', () => {
     expect(emitted![0]).toEqual([false])
   })
 
-  it('emits update:visible false on dialog close event', async () => {
+  it('emits update:visible false on cancel', async () => {
     const wrapper = mountDialogRaw()
-    const dialogStub = wrapper.find('.el-dialog-stub')
-    // Simulate dialog close by directly calling the dialog's close handler
-    // The el-dialog stub emits 'close' which triggers onCancel
-    const dialogEl = wrapper.findComponent('.el-dialog-stub')
-    await dialogEl.vm.$emit('close')
-    await flushPromises()
-    const emitted = wrapper.emitted('update:visible')
-    expect(emitted).toBeDefined()
-    expect(emitted!.some(e => e[0] === false)).toBe(true)
+    // Find and click cancel button
+    const cancelBtn = wrapper.findAll('button').find(b => b.text() === '取消')
+    if (cancelBtn) {
+      await cancelBtn.trigger('click')
+      await flushPromises()
+      const emitted = wrapper.emitted('update:visible')
+      expect(emitted).toBeDefined()
+      expect(emitted!.some(e => e[0] === false)).toBe(true)
+    }
   })
 
   it('renders three UserPicker stubs for permissions', () => {

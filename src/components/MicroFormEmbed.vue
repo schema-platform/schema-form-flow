@@ -11,7 +11,7 @@
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { loadMicroApp } from 'qiankun'
 import type { MicroApp } from 'qiankun'
-import { APP_CONFIGS } from '@schema-form/platform-shared/qiankun/config'
+import { APP_CONFIGS } from '@schema-platform/platform-shared/qiankun/config'
 import styles from './MicroFormEmbed.module.scss'
 
 const props = defineProps<{

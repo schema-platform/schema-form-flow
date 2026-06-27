@@ -15,6 +15,13 @@ vi.mock('../api/flowApi', () => ({
     completeTask: vi.fn(),
     batchApprove: vi.fn(),
     batchReject: vi.fn(),
+    addComment: vi.fn(),
+    urgeTask: vi.fn(),
+    transferTask: vi.fn(),
+    withdrawInstance: vi.fn(),
+    delegateTask: vi.fn(),
+    addApprover: vi.fn(),
+    removeApprover: vi.fn(),
   },
 }))
 
@@ -206,6 +213,80 @@ describe('flowInstance store', () => {
       const store = useFlowInstanceStore()
       await store.batchReject(['t1'])
       expect(mockedApi.batchReject).toHaveBeenCalledWith(['t1'], undefined)
+    })
+  })
+
+  describe('addComment', () => {
+    it('calls flowApi.addComment', async () => {
+      mockedApi.addComment.mockResolvedValue({ id: 'log-1' } as any)
+      const store = useFlowInstanceStore()
+      await store.addComment('task-1', '测试评论')
+      expect(mockedApi.addComment).toHaveBeenCalledWith('task-1', { comment: '测试评论' })
+    })
+  })
+
+  describe('urgeTask', () => {
+    it('calls flowApi.urgeTask', async () => {
+      mockedApi.urgeTask.mockResolvedValue({ id: 'notif-1' } as any)
+      const store = useFlowInstanceStore()
+      await store.urgeTask('task-1', '请尽快处理')
+      expect(mockedApi.urgeTask).toHaveBeenCalledWith('task-1', { message: '请尽快处理' })
+    })
+
+    it('calls flowApi.urgeTask without message', async () => {
+      mockedApi.urgeTask.mockResolvedValue({ id: 'notif-1' } as any)
+      const store = useFlowInstanceStore()
+      await store.urgeTask('task-1')
+      expect(mockedApi.urgeTask).toHaveBeenCalledWith('task-1', { message: undefined })
+    })
+  })
+
+  describe('transferTask', () => {
+    it('calls flowApi.transferTask and removes task from list', async () => {
+      const mockTask = { id: 'task-1', status: 'claimed' }
+      mockedApi.transferTask.mockResolvedValue(mockTask as any)
+      const store = useFlowInstanceStore()
+      store.tasks = [{ id: 'task-1' }, { id: 'task-2' }] as any
+      await store.transferTask('task-1', 'user-2', '转办原因')
+      expect(mockedApi.transferTask).toHaveBeenCalledWith('task-1', { targetUserId: 'user-2', comment: '转办原因' })
+      expect(store.tasks).toHaveLength(1)
+      expect(store.tasks[0].id).toBe('task-2')
+    })
+  })
+
+  describe('withdrawInstance', () => {
+    it('calls flowApi.withdrawInstance and updates instance', async () => {
+      const mockInstance = { id: 'inst-1', status: 'terminated' }
+      mockedApi.withdrawInstance.mockResolvedValue(mockInstance as any)
+      const store = useFlowInstanceStore()
+      store.instances = [{ id: 'inst-1', status: 'running' }] as any
+      store.currentInstance = { id: 'inst-1', status: 'running' } as any
+      await store.withdrawInstance('inst-1', '撤回原因')
+      expect(mockedApi.withdrawInstance).toHaveBeenCalledWith('inst-1', { comment: '撤回原因' })
+      expect(store.instances[0].status).toBe('terminated')
+      expect(store.currentInstance?.status).toBe('terminated')
+    })
+  })
+
+  describe('addApprover', () => {
+    it('calls flowApi.addApprover and updates task in list', async () => {
+      const mockTask = { id: 'task-1', candidateUsers: ['user-1', 'user-2'] }
+      mockedApi.addApprover.mockResolvedValue(mockTask as any)
+      const store = useFlowInstanceStore()
+      store.tasks = [{ id: 'task-1' }] as any
+      await store.addApprover('task-1', ['user-2'], '加签')
+      expect(mockedApi.addApprover).toHaveBeenCalledWith('task-1', { userIds: ['user-2'], comment: '加签' })
+    })
+  })
+
+  describe('removeApprover', () => {
+    it('calls flowApi.removeApprover and updates task in list', async () => {
+      const mockTask = { id: 'task-1', candidateUsers: ['user-1'] }
+      mockedApi.removeApprover.mockResolvedValue(mockTask as any)
+      const store = useFlowInstanceStore()
+      store.tasks = [{ id: 'task-1' }] as any
+      await store.removeApprover('task-1', ['user-2'], '减签')
+      expect(mockedApi.removeApprover).toHaveBeenCalledWith('task-1', { userIds: ['user-2'], comment: '减签' })
     })
   })
 })

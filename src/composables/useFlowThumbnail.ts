@@ -1,7 +1,7 @@
 /**
  * 从 FlowGraph 节点数据生成 SVG 缩略图 base64
  */
-import type { FlowGraph } from '@schema-form/flow-shared'
+import type { FlowGraph } from '@schema-platform/flow-shared'
 
 const NODE_COLORS: Record<string, string> = {
   'bpmn-start-event': '#26a036',

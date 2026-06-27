@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { shallowRef, type ShallowRef } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'
-import type { FlowGraph, FlowNodeData, FlowEdgeData } from '@schema-form/flow-shared'
-import { BpmnElementType, DEFAULT_NODE_SIZES } from '@schema-form/flow-shared'
+import type { FlowGraph, FlowNodeData, FlowEdgeData } from '@schema-platform/flow-shared'
+import { BpmnElementType, DEFAULT_NODE_SIZES } from '@schema-platform/flow-shared'
 
 // VueFlow type -> BpmnElementType
 const VF_TYPE_TO_BPMN: Record<string, BpmnElementType> = {
@@ -18,6 +18,7 @@ const VF_TYPE_TO_BPMN: Record<string, BpmnElementType> = {
   'parallel-gateway': BpmnElementType.ParallelGateway,
   'inclusive-gateway': BpmnElementType.InclusiveGateway,
   'sub-process': BpmnElementType.SubProcess,
+  'call-activity': BpmnElementType.CallActivity,
 }
 
 const BPMN_TO_VF: Record<string, string> = Object.fromEntries(
