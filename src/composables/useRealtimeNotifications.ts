@@ -13,15 +13,20 @@ export function useRealtimeNotifications() {
   const wsUrl = import.meta.env.VITE_WS_URL || ''
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectDelay = 1000
+  const MAX_RECONNECT_DELAY = 30000
 
   function connect() {
     if (!wsUrl || ws) return
 
     try {
-      ws = new WebSocket(wsUrl)
+      const token = localStorage.getItem('token') || ''
+      const url = token ? `${wsUrl}?token=${encodeURIComponent(token)}` : wsUrl
+      ws = new WebSocket(url)
 
       ws.onopen = () => {
         connected.value = true
+        reconnectDelay = 1000 // Reset delay on successful connection
       }
 
       ws.onmessage = (event) => {
@@ -36,8 +41,9 @@ export function useRealtimeNotifications() {
       ws.onclose = () => {
         connected.value = false
         ws = null
-        // Auto-reconnect after 5 seconds
-        reconnectTimer = setTimeout(connect, 5000)
+        // Exponential backoff reconnect
+        reconnectTimer = setTimeout(connect, reconnectDelay)
+        reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY)
       }
 
       ws.onerror = () => {

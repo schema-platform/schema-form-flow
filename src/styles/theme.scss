@@ -2,7 +2,7 @@
 // Flow 主题 — Element Plus 覆盖（对齐 editor 样式）
 // ============================================================
 
-@use '../../../../shared/styles/variables' as *;
+@use '@schema-platform/platform-shared/styles/variables.scss' as *;
 
 :root {
   // ---- Element Plus 主色覆盖 ----

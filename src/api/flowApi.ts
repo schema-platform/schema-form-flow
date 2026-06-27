@@ -92,7 +92,9 @@ export async function fetchApiRaw(url: string, init?: RequestInit): Promise<unkn
     const text = await res.text().catch(() => '')
     throw new Error(`HTTP ${res.status}: ${text || res.statusText}`)
   }
-  return res.json()
+  const json = await res.json()
+  if (json.success === false) throw new Error(json.error?.message ?? 'Request failed')
+  return json
 }
 
 export const flowApi = {
@@ -181,12 +183,13 @@ export const flowApi = {
     }),
 
   // Tasks
-  getMyTasks: (page?: number, pageSize?: number, opts?: { status?: string; q?: string }) => {
+  getMyTasks: (page?: number, pageSize?: number, opts?: { status?: string; q?: string; sortBy?: string }) => {
     const params = new URLSearchParams()
     if (page) params.set('page', String(page))
     if (pageSize) params.set('pageSize', String(pageSize))
     if (opts?.status) params.set('status', opts.status)
     if (opts?.q) params.set('q', opts.q)
+    if (opts?.sortBy) params.set('sortBy', opts.sortBy)
     return request<TaskInstanceListData>(`/flow-tasks/my?${params}`)
   },
 

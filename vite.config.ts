@@ -13,6 +13,11 @@ export default defineConfig({
     vue(),
     qiankun('flow', { useDevMode: true }),
   ],
+  css: {
+    preprocessorOptions: {
+      scss: { api: 'modern-compiler' },
+    },
+  },
   resolve: {
     alias: { '@': resolve(rootDir, 'src') },
   },

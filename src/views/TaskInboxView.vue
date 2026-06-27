@@ -100,6 +100,7 @@ function fetchTasks() {
   store.fetchMyTasks(page.value, pageSize.value, {
     status,
     q: searchQuery.value || undefined,
+    sortBy: sortBy.value,
   })
 }
 
@@ -170,11 +171,15 @@ function openComplete(taskId: string) {
 }
 
 async function confirmComplete() {
-  await store.completeTask(completeTaskId.value, {}, 'completed', completeComment.value || undefined)
-  completeDialogVisible.value = false
-  completeComment.value = ''
-  ElMessage.success('任务已完成')
-  fetchTasks()
+  try {
+    await store.completeTask(completeTaskId.value, {}, 'completed', completeComment.value || undefined)
+    completeDialogVisible.value = false
+    completeComment.value = ''
+    ElMessage.success('任务已完成')
+    fetchTasks()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '操作失败')
+  }
 }
 
 function openDelegate(taskId: string) {

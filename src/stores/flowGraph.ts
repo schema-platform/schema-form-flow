@@ -105,7 +105,7 @@ export const useFlowGraphStore = defineStore('flowGraph', () => {
         const size = bpmnType ? DEFAULT_NODE_SIZES[bpmnType] : { width: 160, height: 80 }
         return {
           id: n.id,
-          shape: `bpmn-${n.type}`,
+          shape: n.type ? `bpmn-${n.type}` : 'bpmn-unknown',
           x: n.position.x,
           y: n.position.y,
           width: size.width,
@@ -156,6 +156,7 @@ export const useFlowGraphStore = defineStore('flowGraph', () => {
       const vfType = n.shape.slice(5)
       if (VF_TYPE_TO_BPMN[vfType]) return vfType
     }
+    console.warn(`[flowGraph] Unknown node type for node ${n.id}, shape: ${n.shape}, falling back to user-task`)
     return 'user-task'
   }
 

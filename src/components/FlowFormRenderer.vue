@@ -202,7 +202,8 @@ const pendingRequests = new Map<string, {
 }>()
 
 function postToEditor(data: Record<string, unknown>) {
-  iframeRef.value?.contentWindow?.postMessage(data, '*')
+  const targetOrigin = EDITOR_BASE || window.location.origin
+  iframeRef.value?.contentWindow?.postMessage(data, targetOrigin)
 }
 
 function requestFromEditor<T>(data: Record<string, unknown>, timeout = 5000): Promise<T> {
@@ -223,6 +224,10 @@ function requestFromEditor<T>(data: Record<string, unknown>, timeout = 5000): Pr
 }
 
 function handleMessage(event: MessageEvent) {
+  // Validate origin
+  const expectedOrigin = EDITOR_BASE || window.location.origin
+  if (expectedOrigin && event.origin !== new URL(expectedOrigin).origin) return
+
   const data = event.data as Record<string, unknown>
   if (!data?.type) return
 
@@ -246,11 +251,12 @@ function handleMessage(event: MessageEvent) {
     initForm()
   }
 
-  // Handle submit from editor
+  // Handle submit from editor — still validate before approving
   if (data.type === 'fg:submit') {
     const formData = data.data as Record<string, unknown> | undefined
     if (formData) {
-      emit('approve', formData)
+      // Validate first, then approve
+      handleApprove()
     }
   }
 }

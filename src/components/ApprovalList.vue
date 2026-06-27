@@ -37,10 +37,6 @@
             <span :class="$style.label">时间：</span>
             <span>{{ formatTime(String(log.createdAt)) }}</span>
           </div>
-          <div v-if="log.action === 'approve' || log.action === 'reject'" :class="$style.duration">
-            <span :class="$style.label">耗时：</span>
-            <span>{{ formatDuration(String(log.createdAt), String(log.createdAt)) }}</span>
-          </div>
         </div>
       </div>
 
@@ -59,8 +55,6 @@ const emit = defineEmits<{
   (e: 'urge', taskId: string): void
 }>()
 
-const commentInput = ref('')
-const commentingTaskId = ref('')
 
 const props = defineProps<{
   instanceId: string
@@ -166,23 +160,6 @@ function formatDuration(start: string, end: string): string {
   const days = Math.floor(hours / 24)
   const remainHours = hours % 24
   return `${days}天${remainHours}小时`
-}
-
-function startComment(taskId: string) {
-  commentingTaskId.value = taskId
-  commentInput.value = ''
-}
-
-function cancelComment() {
-  commentingTaskId.value = ''
-  commentInput.value = ''
-}
-
-function submitComment(taskId: string) {
-  if (!commentInput.value.trim()) return
-  emit('comment', taskId, commentInput.value.trim())
-  commentingTaskId.value = ''
-  commentInput.value = ''
 }
 
 watch(() => props.instanceId, () => {

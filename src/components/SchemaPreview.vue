@@ -99,9 +99,9 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
-const schema = ref<any>(null)
+const schema = ref<Record<string, unknown> | null>(null)
 const formData = ref<Record<string, unknown>>({})
-const formRef = ref<any>(null)
+const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']> | null>(null)
 
 /** Check if a field should be disabled based on mode and editableFields/readonlyFields */
 function isFieldDisabled(field: string): boolean {

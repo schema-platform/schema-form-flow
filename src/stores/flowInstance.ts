@@ -19,7 +19,8 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
   const tasks = ref<TaskInstance[]>([])
   const tasksTotal = ref(0)
   const loading = ref(false)
-  const lastTaskFilters = ref<{ status?: string; q?: string }>({})
+  const lastTaskFilters = ref<{ status?: string; q?: string; sortBy?: string }>({})
+  const lastPageSize = ref(20)
 
   async function fetchInstances(params?: FlowInstanceQuery) {
     loading.value = true
@@ -76,9 +77,10 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
     return instance
   }
 
-  async function fetchMyTasks(page = 1, pageSize = 20, opts?: { status?: string; q?: string }) {
+  async function fetchMyTasks(page = 1, pageSize = 20, opts?: { status?: string; q?: string; sortBy?: string }) {
     loading.value = true
-    lastTaskFilters.value = { status: opts?.status, q: opts?.q }
+    lastTaskFilters.value = { status: opts?.status, q: opts?.q, sortBy: opts?.sortBy }
+    lastPageSize.value = pageSize
     try {
       const data = await flowApi.getMyTasks(page, pageSize, opts)
       tasks.value = data.items
@@ -144,13 +146,13 @@ export const useFlowInstanceStore = defineStore('flowInstance', () => {
 
   async function batchApprove(taskIds: string[]): Promise<BatchResult> {
     const result = await flowApi.batchApprove(taskIds)
-    await fetchMyTasks(1, 20, lastTaskFilters.value)
+    await fetchMyTasks(1, lastPageSize.value, lastTaskFilters.value)
     return result
   }
 
   async function batchReject(taskIds: string[], reason?: string): Promise<BatchResult> {
     const result = await flowApi.batchReject(taskIds, reason)
-    await fetchMyTasks(1, 20, lastTaskFilters.value)
+    await fetchMyTasks(1, lastPageSize.value, lastTaskFilters.value)
     return result
   }
 

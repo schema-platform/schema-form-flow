@@ -91,15 +91,7 @@ const multiInstanceType = computed(() => {
 })
 
 function onMultiInstanceTypeChange(type: string) {
-  const data = props.node.data as Record<string, unknown> | undefined
-  if (!data) return
   if (type === 'none') {
-    const { multiInstance: _, ...rest } = data
-    // Clear multiInstance by setting each remaining key
-    for (const key of Object.keys(rest)) {
-      emit('updateNodeData', key, rest[key])
-    }
-    // Remove multiInstance
     emit('updateNodeData', 'multiInstance', undefined)
   } else {
     emit('updateNodeData', 'multiInstance', {

@@ -2,10 +2,10 @@
 // Flow 设计令牌 — 引用共享样式包
 // ============================================================
 
-@use '../../../../shared/styles/variables' as *;
+@use '@schema-platform/platform-shared/styles/variables.scss' as *;
 
 // ---------- CSS 变量（:root） ----------
-@use '../../../../shared/styles/css-variables';
+@use '@schema-platform/platform-shared/styles/css-variables.scss';
 
 // ---------- 节点强调色（flow 专用） ----------
 :root {
