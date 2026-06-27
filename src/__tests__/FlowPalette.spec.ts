@@ -102,7 +102,7 @@ describe('FlowPalette', () => {
   it('sets correct data on dragstart for exclusive gateway', async () => {
     const wrapper = mountPalette()
     const items = wrapper.findAll('[data-test="palette-item"]')
-    const gw = items.find(i => i.text() === '排他网关')!
+    const gw = items.find(i => i.text().includes('排他网关'))!
 
     const dataTransfer = {
       setData: vi.fn(),
@@ -282,7 +282,7 @@ describe('FlowPalette', () => {
   it('sets correct data on dragstart for sub process', async () => {
     const wrapper = mountPalette()
     const items = wrapper.findAll('[data-test="palette-item"]')
-    const item = items.find(i => i.text() === '子流程')!
+    const item = items.find(i => i.text().includes('子流程'))!
 
     const dataTransfer = {
       setData: vi.fn(),

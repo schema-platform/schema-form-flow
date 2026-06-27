@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import type { FlowDefinitionData } from '@schema-form/flow-shared'
 import { flowApi } from '../api/flowApi.js'
 
@@ -8,25 +9,19 @@ export type FlowDefinition = FlowDefinitionData
 export const useFlowDefinitionStore = defineStore('flowDefinition', () => {
   const definitions = ref<FlowDefinition[]>([])
   const currentDefinition = ref<FlowDefinition | null>(null)
-  const loading = ref(false)
+  const { loading, error, withLoading } = useDataLoading({ timeout: 15000 })
 
   async function fetchDefinitions(params?: { search?: string; status?: string; page?: number }) {
-    loading.value = true
-    try {
+    await withLoading(async () => {
       const data = await flowApi.listFlows(params)
       definitions.value = data.items
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   async function fetchDefinition(id: string) {
-    loading.value = true
-    try {
+    await withLoading(async () => {
       currentDefinition.value = await flowApi.getFlow(id)
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   async function createDefinition(data: { name: string; description?: string; category?: string }) {
@@ -52,6 +47,7 @@ export const useFlowDefinitionStore = defineStore('flowDefinition', () => {
     definitions,
     currentDefinition,
     loading,
+    error,
     fetchDefinitions,
     fetchDefinition,
     createDefinition,

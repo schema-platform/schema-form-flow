@@ -25,6 +25,8 @@ function createTestRouter(initialRoute = '/list') {
       { path: '/tasks', component: { template: '<div>Tasks</div>' } },
       { path: '/instances', component: { template: '<div>Instances</div>' } },
       { path: '/monitor', component: { template: '<div>Monitor</div>' } },
+      { path: '/templates', component: { template: '<div>Templates</div>' } },
+      { path: '/stats', component: { template: '<div>Stats</div>' } },
       { path: '/', component: { template: '<div>Root</div>' } },
     ],
     initialHistoryState: { back: '', current: initialRoute, forward: '' },
@@ -67,12 +69,14 @@ describe('AppLayout', () => {
   it('renders router-link stubs for all nav items', async () => {
     const wrapper = await mountLayout()
     const navLinks = wrapper.find('[data-test="nav"]').findAll('.router-link-stub')
-    expect(navLinks.length).toBe(4)
+    expect(navLinks.length).toBe(6)
     const hrefs = navLinks.map(l => l.attributes('href'))
     expect(hrefs).toContain('/list')
     expect(hrefs).toContain('/tasks')
     expect(hrefs).toContain('/instances')
     expect(hrefs).toContain('/monitor')
+    expect(hrefs).toContain('/templates')
+    expect(hrefs).toContain('/stats')
   })
 
   it('contains router-view for main content', async () => {
@@ -93,10 +97,10 @@ describe('AppLayout', () => {
     expect(logo.exists()).toBe(true)
   })
 
-  it('has exactly four navigation links in nav section', async () => {
+  it('has exactly six navigation links in nav section', async () => {
     const wrapper = await mountLayout()
     const navLinks = wrapper.find('[data-test="nav"]').findAll('.router-link-stub')
-    expect(navLinks.length).toBe(4)
+    expect(navLinks.length).toBe(6)
   })
 
   it('renders nav items with correct text', async () => {

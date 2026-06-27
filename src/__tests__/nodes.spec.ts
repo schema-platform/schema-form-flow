@@ -67,7 +67,8 @@ for (const node of nodes) {
       } else if (node.defaultLabel) {
         expect(wrapper.text()).toContain(node.defaultLabel)
       } else if (node.hasIcon) {
-        expect(wrapper.find('svg').exists()).toBe(true)
+        // AppIcon is mocked as a span in test environment
+        expect(wrapper.find('.app-icon-stub, svg').exists()).toBe(true)
       }
     })
 

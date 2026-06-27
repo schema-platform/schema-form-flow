@@ -15,6 +15,35 @@ vi.mock('../api/flowApi', () => ({
 import { flowApi } from '../api/flowApi.js'
 const mockedApi = vi.mocked(flowApi)
 
+const stubs = {
+  'AppIcon': {
+    template: '<svg class="app-icon-stub"></svg>',
+    props: ['name', 'size'],
+  },
+  'el-popover': {
+    template: '<div class="el-popover-stub"><slot name="reference" /><slot /></div>',
+    props: ['placement', 'width', 'trigger'],
+    emits: ['show'],
+  },
+  'el-badge': {
+    template: `<div class="el-badge-stub"><slot /><span v-if="!hidden && value" class="el-badge__content">{{ value }}</span></div>`,
+    props: ['value', 'hidden', 'max'],
+  },
+  'el-button': {
+    template: '<button class="el-button-stub"><slot /></button>',
+    props: ['type', 'link', 'size'],
+    emits: ['click'],
+  },
+  'el-tag': {
+    template: '<span class="el-tag-stub"><slot /></span>',
+    props: ['type', 'size', 'effect'],
+  },
+  'el-empty': {
+    template: '<div class="el-empty-stub">{{ description }}</div>',
+    props: ['description'],
+  },
+}
+
 describe('NotificationBell', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -29,7 +58,7 @@ describe('NotificationBell', () => {
 
   function createWrapper() {
     return mount(NotificationBell, {
-      global: {},
+      global: { stubs },
     })
   }
 
@@ -54,8 +83,9 @@ describe('NotificationBell', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    const badge = wrapper.find('.t-badge__count')
+    const badge = wrapper.find('.el-badge__content')
     expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe('5')
   })
 
   it('hides badge when unread count is 0', async () => {
@@ -64,7 +94,7 @@ describe('NotificationBell', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    const badge = wrapper.find('.t-badge__count')
+    const badge = wrapper.find('.el-badge__content')
     expect(badge.exists()).toBe(false)
   })
 })

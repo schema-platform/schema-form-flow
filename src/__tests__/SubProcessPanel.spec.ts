@@ -3,13 +3,19 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
 /* ------------------------------------------------------------------ */
+/*  Mocks — icons                                                      */
 /* ------------------------------------------------------------------ */
 
-  ChevronRightIcon: { template: '<span />' },
-  ChevronDownIcon: { template: '<span />' },
-  AddIcon: { template: '<span />' },
-  DeleteIcon: { template: '<span />' },
-  SearchIcon: { template: '<span />' },
+vi.mock('@element-plus/icons-vue', () => ({
+  ChevronRight: { template: '<span />' },
+  ChevronDown: { template: '<span />' },
+  Plus: { template: '<span />' },
+  Delete: { template: '<span />' },
+  Search: { template: '<span />' },
+}))
+
+vi.mock('@schema-form/platform-shared/components/common/AppIcon.vue', () => ({
+  default: { template: '<span class="app-icon-stub" />', props: ['name', 'size'] },
 }))
 
 /* ------------------------------------------------------------------ */

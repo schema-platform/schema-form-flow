@@ -4,14 +4,15 @@ import { ref, computed } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 
 /* ------------------------------------------------------------------ */
+/*  Mocks — Element Plus & AppIcon                                     */
 /* ------------------------------------------------------------------ */
 
-  MessagePlugin: { success: vi.fn(), error: vi.fn() },
+vi.mock('element-plus', () => ({
+  ElMessage: { success: vi.fn(), error: vi.fn() },
 }))
 
-  ChevronRightIcon: { template: '<span />' },
-  ChevronDownIcon: { template: '<span />' },
-  CopyIcon: { template: '<span />' },
+vi.mock('@schema-form/platform-shared/components/common/AppIcon.vue', () => ({
+  default: { template: '<span class="app-icon-stub" />', props: ['name', 'size'] },
 }))
 
 /* ------------------------------------------------------------------ */
@@ -332,7 +333,7 @@ describe('FlowPropertyPanel', () => {
 
     it('shows form association checkbox', () => {
       const wrapper = mountPanel()
-      expect(wrapper.text()).toContain('关联表单')
+      expect(wrapper.text()).toContain('关联模板')
     })
   })
 

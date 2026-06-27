@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 /* ------------------------------------------------------------------ */
+/*  Mocks — icons                                                      */
 /* ------------------------------------------------------------------ */
 
-  SearchIcon: { template: '<span />' },
+vi.mock('@element-plus/icons-vue', () => ({
+  Search: { template: '<span />' },
+}))
+
+vi.mock('@schema-form/platform-shared/components/common/AppIcon.vue', () => ({
+  default: { template: '<span class="app-icon-stub" />', props: ['name', 'size'] },
 }))
 
 /* ------------------------------------------------------------------ */

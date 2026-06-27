@@ -8,7 +8,7 @@ const isProd = process.env.NODE_ENV === 'production'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
-  base: isProd ? '/schema-platform/micro/flow/' : '/',
+  base: isProd ? '/schema-platform/child/flow/' : '/',
   plugins: [
     vue(),
     qiankun('flow', { useDevMode: true }),
@@ -26,9 +26,60 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/schema-platform\/api/, '/api'),
+        selfHandleResponse: true,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, _, res) => {
+            const contentType = proxyRes.headers['content-type'] ?? ''
+            const isSSE = contentType.includes('text/event-stream')
+            const headers = { ...proxyRes.headers }
+            delete headers['content-encoding']
+            delete headers['transfer-encoding']
+            if (isSSE) {
+              headers['cache-control'] = 'no-cache'
+              headers['x-accel-buffering'] = 'no'
+            }
+            res.writeHead(proxyRes.statusCode ?? 200, headers)
+            if (isSSE) {
+              proxyRes.on('data', (chunk) => { res.write(chunk) })
+              proxyRes.on('end', () => res.end())
+              proxyRes.on('error', () => res.end())
+            } else {
+              proxyRes.pipe(res)
+            }
+          })
+        },
       },
-      '/api': { target: 'http://localhost:3001', changeOrigin: true },
-      '/ws': { target: 'http://localhost:3001', changeOrigin: true, ws: true },
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        selfHandleResponse: true,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, _, res) => {
+            const contentType = proxyRes.headers['content-type'] ?? ''
+            const isSSE = contentType.includes('text/event-stream')
+            const headers = { ...proxyRes.headers }
+            delete headers['content-encoding']
+            delete headers['transfer-encoding']
+            if (isSSE) {
+              headers['cache-control'] = 'no-cache'
+              headers['x-accel-buffering'] = 'no'
+            }
+            res.writeHead(proxyRes.statusCode ?? 200, headers)
+            if (isSSE) {
+              proxyRes.on('data', (chunk) => { res.write(chunk) })
+              proxyRes.on('end', () => res.end())
+              proxyRes.on('error', () => res.end())
+            } else {
+              proxyRes.pipe(res)
+            }
+          })
+        },
+      },
+      '/ws': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

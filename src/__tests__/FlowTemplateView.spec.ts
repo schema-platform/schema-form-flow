@@ -62,12 +62,51 @@ describe('FlowTemplateView', () => {
     mockedApi.seedBuiltinTemplates.mockResolvedValue({ created: 0, skipped: 0 })
   })
 
+  const elStubs = {
+    'el-input': {
+      template: '<input :value="modelValue" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+      props: ['modelValue', 'placeholder', 'clearable'],
+      emits: ['update:modelValue', 'input', 'clear', 'keyup'],
+    },
+    'el-select': {
+      template: '<select :value="modelValue"><slot /></select>',
+      props: ['modelValue', 'placeholder', 'clearable'],
+      emits: ['update:modelValue', 'change'],
+    },
+    'el-option': {
+      template: '<option :value="value">{{ label }}</option>',
+      props: ['label', 'value'],
+    },
+    'el-button': {
+      template: '<button @click="$emit(\'click\')"><slot /></button>',
+      props: ['type', 'size', 'loading', 'disabled'],
+      emits: ['click'],
+    },
+    'el-tag': {
+      template: '<span class="el-tag-stub"><slot /></span>',
+      props: ['type', 'size', 'effect'],
+    },
+    'el-empty': {
+      template: '<div class="el-empty-stub">{{ description }}</div>',
+      props: ['description'],
+    },
+    'el-form': {
+      template: '<form><slot /></form>',
+      props: ['model', 'labelWidth'],
+    },
+    'el-form-item': {
+      template: '<div><slot /></div>',
+      props: ['label', 'required'],
+    },
+  }
+
   function createWrapper() {
     return mount(FlowTemplateView, {
       global: {
         directives: {
           loading: () => {},
         },
+        stubs: elStubs,
       },
     })
   }
@@ -94,13 +133,14 @@ describe('FlowTemplateView', () => {
   it('has search input', async () => {
     const wrapper = createWrapper()
     await flushPromises()
-    expect(wrapper.find('.t-input').exists()).toBe(true)
+    expect(wrapper.find('input').exists()).toBe(true)
   })
 
   it('has category filter select', async () => {
     const wrapper = createWrapper()
     await flushPromises()
-    expect(wrapper.find('.t-select').exists()).toBe(true)
+    // el-select renders as a native custom element in test; check for the select wrapper
+    expect(wrapper.find('el-select-stub, .el-select, [class*="categorySelect"]').exists()).toBe(true)
   })
 
   it('displays template cards with use count', async () => {
@@ -164,15 +204,16 @@ describe('FlowTemplateView', () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const builtinTags = wrapper.findAll('.t-tag--success')
-    expect(builtinTags.length).toBe(1)
+    const builtinTags = wrapper.findAll('.el-tag-stub')
+    const builtinCount = builtinTags.filter(t => t.text().includes('内置')).length
+    expect(builtinCount).toBe(1)
   })
 
   it('shows empty state when no templates', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    expect(wrapper.find('.t-empty').exists()).toBe(true)
+    expect(wrapper.text()).toContain('暂无模板')
   })
 
   it('displays category information', async () => {

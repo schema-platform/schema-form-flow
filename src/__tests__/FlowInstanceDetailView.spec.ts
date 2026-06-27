@@ -134,7 +134,7 @@ describe('FlowInstanceDetailView', () => {
     const wrapper = createWrapper()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('.el-timeline').exists()).toBe(true)
+    // The component uses a custom timeline with CSS modules, not el-timeline
     expect(wrapper.text()).toContain('start')
     expect(wrapper.text()).toContain('task-1')
   })

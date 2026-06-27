@@ -13,8 +13,8 @@ describe('NotFoundView', () => {
     expect(wrapper.text()).toContain('页面不存在')
   })
 
-  it('contains link to /flow/list', () => {
-    const link = wrapper.find('a[href="/flow/list"]')
+  it('contains link to list', () => {
+    const link = wrapper.find('a[href="/list"]')
     expect(link.exists()).toBe(true)
     expect(link.text()).toBe('返回流程列表')
   })

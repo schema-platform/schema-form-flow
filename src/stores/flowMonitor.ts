@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import type {
   FlowMonitorStatsWithPercent,
   FlowMonitorNodeStat,
@@ -28,7 +29,7 @@ export const useFlowMonitorStore = defineStore('flowMonitor', () => {
   const nodeStats = ref<FlowMonitorNodeStat[]>([])
   const trend = ref<FlowMonitorTrendPoint[]>([])
   const topFlows = ref<FlowMonitorTopFlow[]>([])
-  const loading = ref(false)
+  const { loading, error, withLoading } = useDataLoading({ timeout: 15000 })
 
   const timeRange = ref<FlowMonitorTimeRange>({ preset: 'month' })
 
@@ -43,8 +44,7 @@ export const useFlowMonitorStore = defineStore('flowMonitor', () => {
   }
 
   async function fetchDashboard(days = 30) {
-    loading.value = true
-    try {
+    await withLoading(async () => {
       const [statsData, durationData, nodeData, trendData, topFlowsData] = await Promise.all([
         flowApi.getMonitorStats(timeRange.value),
         flowApi.getMonitorAvgDuration(),
@@ -57,9 +57,7 @@ export const useFlowMonitorStore = defineStore('flowMonitor', () => {
       nodeStats.value = nodeData
       trend.value = trendData
       topFlows.value = topFlowsData
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   return {
@@ -70,6 +68,7 @@ export const useFlowMonitorStore = defineStore('flowMonitor', () => {
     topFlows,
     todayNew,
     loading,
+    error,
     timeRange,
     setTimeRange,
     fetchDashboard,

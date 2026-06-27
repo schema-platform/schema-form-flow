@@ -1,15 +1,38 @@
-import { createVitestConfig } from '@schema-form/platform-shared/config/vitest'
+import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-export default createVitestConfig({
-  callerImportMetaUrl: import.meta.url,
-  coverage: {
-    include: ['src/**/*.{ts,vue}'],
-    exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/main.ts'],
-    thresholds: {
-      statements: 60,
-      branches: 50,
-      functions: 60,
-      lines: 60,
+const rootDir = fileURLToPath(new URL('.', import.meta.url))
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': resolve(rootDir, 'src'),
+      '@schema-form/platform-shared/components/common/FilterTabs.vue': resolve(rootDir, 'src/__test_stubs__/FilterTabs.vue'),
+      '@schema-form/platform-shared/components/common/AppIcon.vue': resolve(rootDir, 'src/__test_stubs__/AppIcon.vue'),
+      '@schema-form/platform-shared/components/common/AppDialog.vue': resolve(rootDir, 'src/__test_stubs__/AppDialog.vue'),
+    },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['src/__tests__/setup.ts'],
+    env: {
+      VITE_API_BASE_URL: '/api',
+    },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,vue}'],
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/main.ts'],
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 60,
+        lines: 60,
+      },
     },
   },
 })

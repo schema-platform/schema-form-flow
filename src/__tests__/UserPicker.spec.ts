@@ -129,12 +129,12 @@ describe('UserPicker', () => {
     await flushPromises()
 
     expect(vm.options).toHaveLength(3)
-    expect(vm.options[0].value).toBe('user:u1')
+    expect(vm.options[0].value).toBe('u1')
     expect(vm.options[0].label).toBe('Alice (alice)')
     expect(vm.options[0].type).toBe('user')
-    expect(vm.options[1].value).toBe('user:u2')
+    expect(vm.options[1].value).toBe('u2')
     expect(vm.options[1].type).toBe('user')
-    expect(vm.options[2].value).toBe('role:r1')
+    expect(vm.options[2].value).toBe('r1')
     expect(vm.options[2].label).toBe('管理员 - 系统管理员')
     expect(vm.options[2].type).toBe('role')
   })
@@ -190,7 +190,7 @@ describe('UserPicker', () => {
     await vi.advanceTimersByTime(300)
     await flushPromises()
     expect(vm.options).toHaveLength(1)
-    expect(vm.options[0].value).toBe('user:u2')
+    expect(vm.options[0].value).toBe('u2')
   })
 
   it('passes props to el-select via stub', () => {

@@ -119,13 +119,17 @@ vi.mock('vue-router', () => ({
 }))
 
 /* ------------------------------------------------------------------ */
+/*  Mocks — Element Plus                                               */
 /* ------------------------------------------------------------------ */
 
-  MessagePlugin: { success: vi.fn(), error: vi.fn() },
-  DialogPlugin: { confirm: vi.fn(() => ({ destroy: vi.fn() })) },
+vi.mock('element-plus', () => ({
+  ElMessage: { success: vi.fn(), error: vi.fn() },
+  ElMessageBox: { confirm: vi.fn(() => Promise.resolve()) },
 }))
 
-  LocationIcon: { template: '<span />' },
+vi.mock('@element-plus/icons-vue', () => ({
+  Refresh: { template: '<span />' },
+  Location: { template: '<span />' },
 }))
 
 /* ------------------------------------------------------------------ */

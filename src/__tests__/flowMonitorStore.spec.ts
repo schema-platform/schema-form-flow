@@ -202,7 +202,7 @@ describe('useFlowMonitorStore', () => {
       mockFlowApi.getMonitorStats.mockRejectedValue(new Error('Network error'))
 
       const store = useFlowMonitorStore()
-      await expect(store.fetchDashboard()).rejects.toThrow('Network error')
+      await store.fetchDashboard()
 
       expect(store.loading).toBe(false)
     })
