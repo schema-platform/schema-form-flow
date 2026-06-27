@@ -1,0 +1,159 @@
+.dashboard {
+  padding: var(--spacing-lg, 24px);
+  min-height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm, 12px);
+  margin-bottom: var(--spacing-20px, 20px);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-20, 20px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--text-color-primary, #303133);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 12px);
+}
+
+.timeRangeGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+}
+
+.datePicker {
+  margin-left: var(--spacing-xs, 4px);
+
+  :deep(.el-range-editor) {
+    min-height: 32px;
+
+    .el-input__wrapper {
+      height: 32px;
+      line-height: 32px;
+    }
+
+    .el-range-input {
+      height: 32px;
+      line-height: 32px;
+    }
+  }
+}
+
+.statsRow {
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.statCard {
+  text-align: center;
+  background: var(--bg-color-white);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statCardClickable {
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(245, 108, 108, 0.25);
+  }
+}
+
+.statItem {
+  padding: var(--spacing-sm, 12px) 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.statTotal {
+  color: var(--color-primary, #409eff);
+}
+
+.statRunning {
+  color: var(--color-info, #909399);
+}
+
+.statCompleted {
+  color: var(--color-success, #67c23a);
+}
+
+.statFailed {
+  color: var(--color-danger, #f56c6c);
+}
+
+.statTerminated {
+  color: var(--text-color-secondary, #909399);
+}
+
+.statSuspended {
+  color: var(--color-warning, #e6a23c);
+}
+
+.statToday {
+  color: var(--color-warning, #e6a23c);
+}
+
+.statDuration {
+  font-size: 20px;
+  color: var(--color-success, #67c23a);
+}
+
+.statLabel {
+  margin-top: var(--spacing-xs, 4px);
+  font-size: var(--font-size-base, 14px);
+  color: var(--text-color-secondary, #909399);
+}
+
+.statPct {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-color-placeholder, #c0c4cc);
+}
+
+.statPctFailed {
+  color: var(--color-danger, #f56c6c);
+  font-weight: 500;
+}
+
+.chartRow {
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.chart {
+  height: 320px;
+  width: 100%;
+}
+
+.refreshGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autoRefreshBtn {
+  font-size: 12px;
+  gap: 4px;
+}

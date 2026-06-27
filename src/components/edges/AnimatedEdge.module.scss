@@ -1,0 +1,38 @@
+.edgeAnimated {
+  stroke-dasharray: 8 4;
+  animation: dash-flow 1s linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+.edgeStatic {
+  /* solid line, no animation */
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  background: var(--bg-color);
+  padding: 2px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color-lighter);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.defaultTag {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.conditionText {
+  color: var(--text-color-secondary);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}

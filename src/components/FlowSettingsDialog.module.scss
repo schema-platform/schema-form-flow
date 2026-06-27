@@ -1,0 +1,33 @@
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fieldLabel {
+  flex-shrink: 0;
+  width: 80px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  text-align: right;
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: var(--text-color-placeholder);
+  margin-top: 2px;
+}
+
+.sectionHeader {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: 4px;
+}

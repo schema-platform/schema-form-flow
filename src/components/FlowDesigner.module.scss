@@ -1,0 +1,244 @@
+.designer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-color-gray-light); // 画布周围用浅灰色
+}
+
+.drawer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-color-white); // 抽屉面板用白色
+}
+
+.drawerLeft {
+  width: 240px;
+  border-right: 1px solid var(--border-color-lighter);
+}
+
+.drawerRight {
+  width: 320px;
+  border-left: 1px solid var(--border-color-lighter);
+}
+
+.aiDrawer {
+  width: 400px;
+  border-left: 1px solid var(--border-color-lighter);
+  transition: none;
+}
+
+.aiIframe {
+  width: 400px;
+  height: 100%;
+  border: none;
+}
+
+.drawer.drawerClosed {
+  width: 0;
+  border: none;
+}
+
+.noErrors {
+  padding: 12px 0;
+  color: var(--color-success);
+  font-size: 14px;
+}
+
+.errorList {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.errorItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color-lighter);
+  font-size: 13px;
+  border-radius: var(--radius-small);
+  transition: background-color 0.15s;
+}
+
+.errorItem:last-child {
+  border-bottom: none;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.errorLevel .badge {
+  background: #fef0f0;
+  color: #c45656;
+}
+
+.warnLevel .badge {
+  background: #fdf6ec;
+  color: #e6a23c;
+}
+
+.errMsg {
+  color: var(--text-color-primary);
+}
+
+.errId {
+  color: var(--text-color-placeholder);
+  font-size: 12px;
+}
+
+.errorItemClickable {
+  cursor: pointer;
+  padding: 8px;
+  margin: 0 -8px;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.errorItemClickable:hover {
+  background-color: var(--bg-color-secondary);
+}
+
+.errLocateIcon {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--color-primary);
+  opacity: 0.6;
+  padding: 4px;
+  border-radius: var(--radius-small);
+  transition: all 0.15s;
+}
+
+.errorItemClickable:hover .errLocateIcon {
+  opacity: 1;
+  background: var(--color-primary-lighter);
+}
+
+.errLocateIcon:hover {
+  background: var(--color-primary-lighter);
+}
+
+.formPreview {
+  border-top: 1px solid var(--border-color-light);
+  background: var(--bg-color-white);
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.formPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color-lighter);
+}
+
+.formPreviewTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-primary);
+}
+
+.versionTable {
+  max-height: 400px;
+}
+
+.versionPanel {
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.versionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color-lighter);
+  margin-bottom: 8px;
+}
+
+.versionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.versionLoading,
+.versionEmpty {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--text-color-placeholder);
+  font-size: 13px;
+}
+
+.versionList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 320px;
+}
+
+.versionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-small);
+  transition: background 0.15s;
+}
+
+.versionItem:hover {
+  background: var(--bg-color-secondary);
+}
+
+.versionItemCurrent {
+  background: var(--color-primary-lighter);
+}
+
+.versionInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.versionTime {
+  font-size: 13px;
+  color: var(--text-color-primary);
+}
+
+.versionTags {
+  display: flex;
+  gap: 4px;
+}
+
+.validationTable {
+  width: 100%;
+}
+
+.errId {
+  font-size: 12px;
+  color: var(--text-color-placeholder);
+  font-family: monospace;
+}
+
+.errIdEmpty {
+  color: var(--text-color-disabled);
+}

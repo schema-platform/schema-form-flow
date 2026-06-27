@@ -1,0 +1,123 @@
+.container {
+  padding: var(--spacing-lg, 24px);
+  min-height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm, 12px);
+  margin-bottom: var(--spacing-20px, 20px);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-20, 20px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--text-color-primary, #303133);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 12px);
+}
+
+.timeRangeGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+}
+
+.datePicker {
+  margin-left: var(--spacing-xs, 4px);
+
+  :deep(.el-range-editor) {
+    min-height: 32px;
+
+    .el-input__wrapper {
+      height: 32px;
+      line-height: 32px;
+    }
+
+    .el-range-input {
+      height: 32px;
+      line-height: 32px;
+    }
+  }
+}
+
+.metricsRow {
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.metricCard {
+  text-align: center;
+  background: var(--bg-color-white);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.metricItem {
+  padding: var(--spacing-sm, 12px) 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.metricValue {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.metricTotal {
+  color: var(--color-primary);
+}
+
+.metricRunning {
+  color: var(--color-info);
+}
+
+.metricCompleted {
+  color: var(--color-success);
+}
+
+.metricDuration {
+  font-size: 20px;
+  color: var(--color-success);
+}
+
+.metricLabel {
+  margin-top: var(--spacing-xs, 4px);
+  font-size: var(--font-size-md);
+  color: var(--text-color-secondary);
+}
+
+.chartCard {
+  margin-bottom: 16px;
+  background: var(--bg-color-white);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart {
+  height: 320px;
+  width: 100%;
+}

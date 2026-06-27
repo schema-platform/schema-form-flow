@@ -1,0 +1,308 @@
+.instanceDetail {
+  padding: var(--spacing-lg);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+.headerActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.infoCard {
+  background: var(--bg-color-white);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-20px);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-md);
+}
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.label {
+  font-size: var(--font-size-12);
+  color: var(--text-color-placeholder);
+}
+.value {
+  font-size: var(--font-size-14);
+  color: var(--text-color-primary);
+}
+.mono {
+  font-family: monospace;
+}
+.graphContainer {
+  background: var(--bg-color-white);
+  border-radius: var(--border-radius-md);
+  height: 500px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.flowGraph {
+  width: 100%;
+  height: 100%;
+}
+.tokenNode {
+  font-family: monospace;
+  font-size: var(--font-size-12);
+}
+.tokenState {
+  margin-left: var(--spacing-sm);
+}
+.emptyTip {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-color-placeholder);
+  font-size: var(--font-size-14);
+}
+
+/* --- Custom timeline (Element Plus has no built-in timeline) --- */
+.customTimeline {
+  position: relative;
+  padding-left: 24px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--border-color-light, #e4e7ed);
+  }
+}
+
+.timelineItem {
+  position: relative;
+  padding-bottom: 20px;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.timelineNode {
+  position: absolute;
+  left: -24px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-color-light, #e4e7ed);
+  border: 2px solid var(--bg-color-white, #fff);
+  z-index: 1;
+}
+
+.timelineNodePrimary {
+  background: var(--color-primary, #409eff);
+}
+
+.timelineNodeSuccess {
+  background: var(--color-success, #67c23a);
+}
+
+.timelineLabel {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-color-placeholder, #c0c4cc);
+  margin-bottom: 4px;
+}
+
+.timelineBody {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Node state styles (applied by VueFlow to node wrapper divs) --- */
+
+/* Running/Active node - blue pulse animation */
+:global(.node-running) {
+  box-shadow: 0 0 0 2px var(--color-primary),
+              0 0 12px rgba(var(--color-primary-rgb), 0.4);
+  animation: node-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+:global(.node-running)::before {
+  content: '\23F0';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border: 2px solid var(--bg-color-white);
+  box-shadow: var(--shadow-sm);
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--bg-color-white);
+}
+
+/* Legacy active class for backward compatibility */
+:global(.node-active) {
+  box-shadow: 0 0 0 2px var(--color-primary),
+              0 0 12px rgba(var(--color-primary-rgb), 0.4);
+  animation: node-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+:global(.node-active)::before {
+  content: '\23F0';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border: 2px solid var(--bg-color-white);
+  box-shadow: var(--shadow-sm);
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--bg-color-white);
+}
+
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--color-primary),
+                0 0 12px rgba(var(--color-primary-rgb), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--color-primary),
+                0 0 24px rgba(var(--color-primary-rgb), 0.6);
+  }
+}
+
+/* Completed node - green checkmark */
+:global(.node-completed) {
+  box-shadow: 0 0 0 2px var(--color-success);
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+:global(.node-completed)::after {
+  content: '\2713';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-success);
+  color: var(--bg-color-white);
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-weight: 700;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Failed node - red X mark */
+:global(.node-failed) {
+  box-shadow: 0 0 0 2px var(--color-danger, #f56c6c);
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+:global(.node-failed)::after {
+  content: '\2717';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-danger, #f56c6c);
+  color: var(--bg-color-white);
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-weight: 700;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Waiting node - gray clock */
+:global(.node-waiting) {
+  opacity: 0.6;
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+:global(.node-waiting)::before {
+  content: '\23F3';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-info, #909399);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border: 2px solid var(--bg-color-white);
+  box-shadow: var(--shadow-sm);
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--bg-color-white);
+}
+
+:global(.node-waiting) :global(.vue-flow__node-content),
+:global(.node-waiting) > div > div {
+  border-style: dashed !important;
+  border-color: var(--border-color-light) !important;
+}
+
+/* --- Edge state styles (applied by VueFlow to edge group elements) --- */
+
+:global(.edge-active) :global(.vue-flow__edge-path) {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.5));
+}
+
+:global(.edge-completed) :global(.vue-flow__edge-path) {
+  stroke: var(--color-success) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: none !important;
+  animation: none !important;
+}
+
+:global(.edge-pending) :global(.vue-flow__edge-path) {
+  stroke: var(--border-color-light) !important;
+  stroke-width: 1.5 !important;
+  stroke-dasharray: 6 4 !important;
+  animation: none !important;
+}
+
+:global(.edge-failed) :global(.vue-flow__edge-path) {
+  stroke: var(--color-danger, #f56c6c) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(245, 108, 108, 0.5));
+}
