@@ -8,7 +8,7 @@ const isProd = process.env.NODE_ENV === 'production'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
-  base: isProd ? '/schema-platform/child/flow/' : '/',
+  base: isProd ? '/schema-platform/flow/' : '/',
   plugins: [
     vue(),
     qiankun('flow', { useDevMode: true }),
@@ -16,6 +16,15 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: { api: 'modern-compiler' },
+    },
+  },
+  build: {
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        format: 'umd',
+        name: 'flowApp',
+      },
     },
   },
   resolve: {
