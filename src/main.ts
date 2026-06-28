@@ -34,9 +34,15 @@ function render(container?: HTMLElement) {
 
 // ── Qiankun 生命周期 ──
 
-export async function bootstrap() {}
+export async function bootstrap() {
+  console.log('[flow] bootstrap')
+}
 
-export async function mount(props: { container?: HTMLElement; getRouteBase?: () => string }) {
+export async function mount(props: { container?: HTMLElement; getRouteBase?: () => string; emitEvent?: (event: string, data: unknown) => void }) {
+  console.log('[flow] mount start')
+  // 立即移除 index.html 中的 #loading（position: fixed 会覆盖整个视口）
+  document.getElementById('loading')?.remove()
+
   // 初始化 qiankun 生命周期（globalState 事件通道）
   initQiankunLifecycle(props as Parameters<typeof initQiankunLifecycle>[0])
 
@@ -53,13 +59,15 @@ export async function mount(props: { container?: HTMLElement; getRouteBase?: () 
     currentRouteBase = subPath + search
   }
 
-  // 移除 index.html 中的 loading（qiankun 模式下 MutationObserver 监听 #app 不会触发）
-  document.getElementById('loading')?.remove()
-
   render(props.container)
+
+  // 通知 shell 子应用已挂载
+  props.emitEvent?.('shell:sub-app-mounted', { app: 'flow' })
+  console.log('[flow] mount done')
 }
 
 export async function unmount() {
+  console.log('[flow] unmount')
   if (app) {
     app.unmount()
     app = null
