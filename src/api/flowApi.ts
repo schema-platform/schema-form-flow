@@ -297,8 +297,10 @@ export const flowApi = {
   },
 
   // Published forms (editor-server)
-  getPublishedForms: () =>
-    request<Array<{ id: string; publishId: string; name: string }>>('/schemas/published'),
+  getPublishedForms: async () => {
+    const response = await request<{ items: Array<{ id: string; publishId: string; name: string }>; total: number; page: number; pageSize: number; totalPages: number }>('/schemas/published')
+    return response.items
+  },
 
   // Get single published form schema by publishId
   getPublishedFormSchema: (publishId: string) =>

@@ -7,6 +7,7 @@ import './styles/theme.scss'
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
+import { initQiankunLifecycle } from '@schema-platform/platform-shared/qiankun'
 import AppRoot from './App.vue'
 import { createFlowRouter } from './router/index.js'
 import { setTokenProvider } from './api/flowApi.js'
@@ -36,7 +37,12 @@ function render(container?: HTMLElement) {
 export async function bootstrap() {}
 
 export async function mount(props: { container?: HTMLElement; getRouteBase?: () => string }) {
-  const token = (props as Record<string, unknown>).token as string | undefined
+  // 初始化 qiankun 生命周期（globalState 事件通道）
+  initQiankunLifecycle(props as Parameters<typeof initQiankunLifecycle>[0])
+
+  // 优先使用 getToken（动态获取），回退到 token（静态值）
+  const p = props as Record<string, unknown>
+  const token = (typeof p.getToken === 'function' ? (p.getToken as () => string)() : p.token as string) || undefined
   if (token) localStorage.setItem('sfp_access_token', token)
 
   if (props.getRouteBase) {
@@ -46,6 +52,9 @@ export async function mount(props: { container?: HTMLElement; getRouteBase?: () 
     const search = window.location.search
     currentRouteBase = subPath + search
   }
+
+  // 移除 index.html 中的 loading（qiankun 模式下 MutationObserver 监听 #app 不会触发）
+  document.getElementById('loading')?.remove()
 
   render(props.container)
 }
@@ -57,11 +66,6 @@ export async function unmount() {
     router = null
   }
 }
-
-// 注册到 vite-plugin-qiankun 全局生命周期
-const g = window as unknown as Record<string, unknown>
-if (!g.moudleQiankunAppLifeCycles) g.moudleQiankunAppLifeCycles = {}
-;(g.moudleQiankunAppLifeCycles as Record<string, unknown>)['flow'] = { bootstrap, mount, unmount }
 
 // 独立模式
 if (!window.__POWERED_BY_QIANKUN__) {

@@ -81,7 +81,7 @@ export const useNotificationStore = defineStore('notification', () => {
   }
 
   function initSocket(userId?: string) {
-    connect()
+    connect({ path: import.meta.env.PROD ? '/schema-platform/ws' : '/ws' })
     if (userId) {
       identify(userId)
     }
