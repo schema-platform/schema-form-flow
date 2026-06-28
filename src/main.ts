@@ -7,29 +7,31 @@ import './styles/theme.scss'
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
-import { initQiankunLifecycle } from '@schema-platform/platform-shared/qiankun'
 import AppRoot from './App.vue'
 import { createFlowRouter } from './router/index.js'
 import { setTokenProvider } from './api/flowApi.js'
-
-setTokenProvider(() => localStorage.getItem('sfp_access_token') || '')
 
 let app: App | null = null
 let router: ReturnType<typeof createFlowRouter> | null = null
 
 let currentRouteBase = '/list'
+let tokenProviderSet = false
 
-function render(container?: HTMLElement) {
+function render() {
+  if (!tokenProviderSet) {
+    setTokenProvider(() => localStorage.getItem('sfp_access_token') || '')
+    tokenProviderSet = true
+  }
+
   router = createFlowRouter(currentRouteBase)
   app = createApp(AppRoot)
   app.use(createPinia())
   app.use(router)
   setupElementPlus(app)
 
-  const mountEl = container?.querySelector('#app') || container || document.getElementById('app')
-  if (mountEl) {
-    app.mount(mountEl)
-  }
+  const mountEl = document.getElementById('flow-app')
+  if (!mountEl) throw new Error('[flow] #flow-app not found')
+  app.mount(mountEl)
 }
 
 // ── Qiankun 生命周期 ──
@@ -38,31 +40,25 @@ export async function bootstrap() {
   console.log('[flow] bootstrap')
 }
 
-export async function mount(props: { container?: HTMLElement; getRouteBase?: () => string; emitEvent?: (event: string, data: unknown) => void }) {
+export async function mount(props: Record<string, unknown>) {
   console.log('[flow] mount start')
-  // 立即移除 index.html 中的 #loading（position: fixed 会覆盖整个视口）
   document.getElementById('loading')?.remove()
 
-  // 初始化 qiankun 生命周期（globalState 事件通道）
-  initQiankunLifecycle(props as Parameters<typeof initQiankunLifecycle>[0])
-
-  // 优先使用 getToken（动态获取），回退到 token（静态值）
-  const p = props as Record<string, unknown>
-  const token = (typeof p.getToken === 'function' ? (p.getToken as () => string)() : p.token as string) || undefined
+  // token
+  const getToken = props.getToken as (() => string) | undefined
+  const token = getToken ? getToken() : (props.token as string)
   if (token) localStorage.setItem('sfp_access_token', token)
 
-  if (props.getRouteBase) {
-    const routeBase = props.getRouteBase()
-    const browserPath = window.location.pathname
-    const subPath = browserPath.slice(routeBase.length) || '/list'
-    const search = window.location.search
-    currentRouteBase = subPath + search
+  // 直接用 shell 传递的 routeBase
+  const getRouteBase = props.getRouteBase as (() => string) | undefined
+  if (getRouteBase) {
+    currentRouteBase = getRouteBase()
   }
 
-  render(props.container)
+  render()
 
-  // 通知 shell 子应用已挂载
-  props.emitEvent?.('shell:sub-app-mounted', { app: 'flow' })
+  const emitEvent = props.emitEvent as ((event: string, data: unknown) => void) | undefined
+  emitEvent?.('shell:sub-app-mounted', { app: 'flow' })
   console.log('[flow] mount done')
 }
 
@@ -75,7 +71,7 @@ export async function unmount() {
   }
 }
 
-// 独立模式
-if (!window.__POWERED_BY_QIANKUN__) {
+// 独立模式：仅开发环境且非 qiankun 子应用时渲染
+if (import.meta.env.DEV && !window.__POWERED_BY_QIANKUN__) {
   render()
 }

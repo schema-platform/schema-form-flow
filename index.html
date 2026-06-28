@@ -28,22 +28,22 @@
   </head>
   <body>
     <div id="loading"><div class="spinner"></div></div>
-    <div id="app"></div>
+    <div id="flow-app"></div>
     <script type="module" src="/src/main.ts"></script>
     <script>
-      // 独立模式：监听 #app 有子节点后关闭 loading
+      // 独立模式：监听 #flow-app 有子节点后关闭 loading
       // qiankun 模式由 mount() 中移除 #loading
       const _loadingEl = document.getElementById('loading');
       if (_loadingEl) {
         const observer = new MutationObserver(() => {
-          const app = document.getElementById('app');
+          const app = document.getElementById('flow-app');
           if (app && app.children.length > 0) {
             _loadingEl.classList.add('hidden');
             setTimeout(() => _loadingEl.remove(), 300);
             observer.disconnect();
           }
         });
-        observer.observe(document.getElementById('app'), { childList: true });
+        observer.observe(document.getElementById('flow-app'), { childList: true });
       }
     </script>
   </body>
