@@ -178,7 +178,8 @@ async function loadSchema() {
 }
 
 /** Extract form schema from flow graph (placeholder — depends on how forms are stored in graph nodes) */
-function extractSchemaFromGraph(graph: Record<string, unknown>): unknown[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractSchemaFromGraph(graph: any): unknown[] {
   // The graph contains nodes, each node may have a formSchemaId
   // For preview purposes, return empty — actual form rendering is done via iframe
   return []
