@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, createMemoryHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
 // qiankun 模式下使用 memory history，避免子应用路由篡改宿主 URL
 const isQiankunChild = () => !!window.__POWERED_BY_QIANKUN__
@@ -104,11 +104,10 @@ const routes = [
   },
 ]
 
-export function createFlowRouter(initialPath?: string) {
+export function createFlowRouter(routeBase?: string) {
+  const base = routeBase || import.meta.env.VITE_ROUTE_BASE || '/'
   const router = createRouter({
-    history: isQiankunChild()
-      ? createMemoryHistory(initialPath || undefined)
-      : createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(base),
     routes,
   })
 

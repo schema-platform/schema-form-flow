@@ -7,6 +7,8 @@ import './styles/theme.scss'
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
+import { initQiankunProps } from '@schema-platform/platform-shared/qiankun'
+import { flowLog } from '@schema-platform/platform-shared/utils/logger'
 import AppRoot from './App.vue'
 import { createFlowRouter } from './router/index.js'
 import { setTokenProvider } from './api/flowApi.js'
@@ -14,7 +16,7 @@ import { setTokenProvider } from './api/flowApi.js'
 let app: App | null = null
 let router: ReturnType<typeof createFlowRouter> | null = null
 
-let currentRouteBase = '/list'
+let currentRouteBase: string | undefined
 let tokenProviderSet = false
 
 function render() {
@@ -37,19 +39,24 @@ function render() {
 // ── Qiankun 生命周期 ──
 
 export async function bootstrap() {
-  console.log('[flow] bootstrap')
+  flowLog.lifecycle('bootstrap')
 }
 
 export async function mount(props: Record<string, unknown>) {
-  console.log('[flow] mount start')
+  flowLog.lifecycle('mount start')
   document.getElementById('loading')?.remove()
+
+  // 注入 shell props → globalState 事件通道
+  if (typeof props.onGlobalStateChange === 'function' && typeof props.setGlobalState === 'function') {
+    initQiankunProps(props as any)
+  }
 
   // token
   const getToken = props.getToken as (() => string) | undefined
   const token = getToken ? getToken() : (props.token as string)
   if (token) localStorage.setItem('sfp_access_token', token)
 
-  // 直接用 shell 传递的 routeBase
+  // routeBase：shell 下发优先，否则用环境变量
   const getRouteBase = props.getRouteBase as (() => string) | undefined
   if (getRouteBase) {
     currentRouteBase = getRouteBase()
@@ -59,11 +66,11 @@ export async function mount(props: Record<string, unknown>) {
 
   const emitEvent = props.emitEvent as ((event: string, data: unknown) => void) | undefined
   emitEvent?.('shell:sub-app-mounted', { app: 'flow' })
-  console.log('[flow] mount done')
+  flowLog.lifecycle('mount done')
 }
 
 export async function unmount() {
-  console.log('[flow] unmount')
+  flowLog.lifecycle('unmount')
   if (app) {
     app.unmount()
     app = null
