@@ -299,6 +299,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowDown, Refresh } from '@element-plus/icons-vue'
 import type { SimulationSpeed } from '../composables/useSimulation.js'
 import { SPEED_LABELS } from '../composables/useSimulation.js'
@@ -307,6 +308,8 @@ import NotificationBell from './NotificationBell.vue'
 import styles from './FlowToolbar.module.scss'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
+
+const router = useRouter()
 
 const props = defineProps<{
   title?: string
@@ -333,7 +336,7 @@ const layoutPopoverVisible = ref(false)
 const speedLabel = computed(() => SPEED_LABELS[props.speed ?? 'normal'])
 
 function goToPortal() {
-  window.location.href = `${import.meta.env.BASE_URL}list`
+  router.push({ name: 'flow-list' })
 }
 
 function handleSaveCommand(command: string) {

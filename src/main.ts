@@ -44,6 +44,14 @@ export async function bootstrap() {
 
 export async function mount(props: Record<string, unknown>) {
   flowLog.lifecycle('mount start')
+
+  // 二次 mount 时先清理旧实例
+  if (app) {
+    try { app.unmount() } catch { /* ignore */ }
+    app = null
+    router = null
+  }
+
   document.getElementById('loading')?.remove()
 
   // 注入 shell props → globalState 事件通道
