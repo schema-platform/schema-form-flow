@@ -3,11 +3,13 @@ import '@schema-platform/platform-shared/styles/theme.scss'
 import '@schema-platform/platform-shared/styles/css-variables.scss'
 import './styles/variables.scss'
 import './styles/theme.scss'
+import './styles/flowGraphStates.scss'
 
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
+import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
-import { initQiankunProps } from '@schema-platform/platform-shared/qiankun'
+import { initQiankunProps, initQiankunShellProps } from '@schema-platform/platform-shared/qiankun'
 import { flowLog } from '@schema-platform/platform-shared/utils/logger'
 import AppRoot from './App.vue'
 import { createFlowRouter } from './router/index.js'
@@ -36,57 +38,42 @@ function render() {
   app.mount(mountEl)
 }
 
-// ── Qiankun 生命周期 ──
+renderWithQiankun({
+  bootstrap() {
+    flowLog.lifecycle('bootstrap')
+  },
+  mount(props) {
+    flowLog.lifecycle('mount start')
 
-export async function bootstrap() {
-  flowLog.lifecycle('bootstrap')
-}
+    document.getElementById('loading')?.remove()
 
-export async function mount(props: Record<string, unknown>) {
-  flowLog.lifecycle('mount start')
+    if (typeof props.onGlobalStateChange === 'function' && typeof props.setGlobalState === 'function') {
+      initQiankunProps(props as Parameters<typeof initQiankunProps>[0])
+    }
+    initQiankunShellProps(props)
 
-  // 二次 mount 时先清理旧实例
-  if (app) {
-    try { app.unmount() } catch { /* ignore */ }
-    app = null
-    router = null
-  }
+    const getToken = props.getToken as (() => string) | undefined
+    const token = getToken ? getToken() : (props.token as string)
+    if (token) localStorage.setItem('sfp_access_token', token)
 
-  document.getElementById('loading')?.remove()
+    const getRouteBase = props.getRouteBase as (() => string) | undefined
+    if (getRouteBase) {
+      currentRouteBase = getRouteBase()
+    }
 
-  // 注入 shell props → globalState 事件通道
-  if (typeof props.onGlobalStateChange === 'function' && typeof props.setGlobalState === 'function') {
-    initQiankunProps(props as any)
-  }
+    render()
+    flowLog.lifecycle('mount done')
+  },
+  unmount() {
+    flowLog.lifecycle('unmount')
+    if (app) {
+      app.unmount()
+      app = null
+      router = null
+    }
+  },
+})
 
-  // token
-  const getToken = props.getToken as (() => string) | undefined
-  const token = getToken ? getToken() : (props.token as string)
-  if (token) localStorage.setItem('sfp_access_token', token)
-
-  // routeBase：shell 下发优先，否则用环境变量
-  const getRouteBase = props.getRouteBase as (() => string) | undefined
-  if (getRouteBase) {
-    currentRouteBase = getRouteBase()
-  }
-
-  render()
-
-  const emitEvent = props.emitEvent as ((event: string, data: unknown) => void) | undefined
-  emitEvent?.('shell:sub-app-mounted', { app: 'flow' })
-  flowLog.lifecycle('mount done')
-}
-
-export async function unmount() {
-  flowLog.lifecycle('unmount')
-  if (app) {
-    app.unmount()
-    app = null
-    router = null
-  }
-}
-
-// 独立模式：仅开发环境且非 qiankun 子应用时渲染
-if (import.meta.env.DEV && !window.__POWERED_BY_QIANKUN__) {
+if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
   render()
 }

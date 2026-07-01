@@ -11,6 +11,11 @@
       :layout-direction="layoutDirection"
       :layout-node-sep="layoutNodeSep"
       :layout-rank-sep="layoutRankSep"
+      :is-simulating="isSimulating"
+      :current-step="simulationStep"
+      :status-message="simulationStatus"
+      :auto-play-active="simulationAutoPlay"
+      :speed="simulationSpeed"
       @save="onSave"
       @undo="onUndo"
       @redo="onRedo"
@@ -30,6 +35,11 @@
       @update:layout-direction="layoutDirection = $event"
       @update:layout-node-sep="layoutNodeSep = $event"
       @update:layout-rank-sep="layoutRankSep = $event"
+      @toggle-simulation="onToggleSimulation"
+      @step-forward="onSimulationStep"
+      @reset-simulation="onSimulationReset"
+      @toggle-auto-play="onSimulationToggleAutoPlay"
+      @cycle-speed="simulation.cycleSpeed()"
     >
       <template #version-popover>
         <div :class="styles.versionPanel">
@@ -202,6 +212,9 @@ import { useFlowDesignerStore } from '../stores/flowDesigner.js'
 import { useFlowGraphStore } from '../stores/flowGraph.js'
 import { useFlowDefinitionStore } from '../stores/flowDefinition.js'
 import { useAutoLayout } from '../composables/useAutoLayout.js'
+import { useSimulation } from '../composables/useSimulation.js'
+import { useSimulationVisual } from '../composables/useSimulationVisual.js'
+import { convertFlowPayloadToVueFlow } from '../utils/bpmnVueFlow.js'
 import { flowApi } from '../api/flowApi.js'
 import { useFlowTemplateStore } from '../stores/flowTemplate.js'
 import { generateThumbnail } from '../composables/useFlowThumbnail.js'
@@ -212,6 +225,13 @@ import AppDialog from '@schema-platform/platform-shared/components/common/AppDia
 const canvasRef = ref<InstanceType<typeof FlowCanvas>>()
 const store = useFlowDesignerStore()
 const graphStore = useFlowGraphStore()
+const simulation = useSimulation()
+const { applySimulationVisuals, clearSimulationVisuals } = useSimulationVisual()
+const isSimulating = simulation.isSimulating
+const simulationStep = simulation.currentStep
+const simulationStatus = simulation.statusMessage
+const simulationAutoPlay = simulation.autoPlayActive
+const simulationSpeed = simulation.speed
 const definitionStore = useFlowDefinitionStore()
 const templateStore = useFlowTemplateStore()
 const {
@@ -395,8 +415,51 @@ watch(() => store.selectedNodeId, (nodeId) => {
 })
 
 function togglePreview() {
-  store.setMode(store.mode === 'design' ? 'preview' : 'design')
+  if (store.mode === 'design') {
+    store.setMode('preview')
+  } else {
+    simulation.stopSimulation()
+    clearSimulationVisuals()
+    store.setMode('design')
+  }
 }
+
+function syncSimulationVisuals() {
+  if (!simulation.isSimulating.value) return
+  applySimulationVisuals(
+    simulation.activeNodeIds.value,
+    simulation.visitedNodeIds.value,
+  )
+}
+
+function onToggleSimulation() {
+  if (simulation.isSimulating.value) {
+    simulation.stopSimulation()
+    clearSimulationVisuals()
+    return
+  }
+  simulation.startSimulation()
+  syncSimulationVisuals()
+}
+
+function onSimulationStep() {
+  simulation.stepForward()
+  syncSimulationVisuals()
+}
+
+function onSimulationReset() {
+  simulation.resetSimulation()
+  syncSimulationVisuals()
+}
+
+function onSimulationToggleAutoPlay() {
+  simulation.toggleAutoPlay()
+}
+
+watch(
+  () => simulation.currentStep.value,
+  () => syncSimulationVisuals(),
+)
 
 /* --- Load existing flow on mount --- */
 
@@ -410,45 +473,17 @@ onMounted(async () => {
   connectSocket()
   offAiApply = onAiApply((data: AiApplyEvent) => {
     if (data.type === 'flow' && data.payload && typeof data.payload === 'object' && !Array.isArray(data.payload)) {
-      const { nodes, edges } = data.payload as { nodes?: unknown[]; edges?: unknown[] }
-      if (nodes && edges) {
-        // 生成 ID 映射，避免与现有节点冲突
-        const idMap = new Map<string, string>()
-        const newNodes = nodes.map((n: any) => {
-          const newId = `node-${crypto.randomUUID()}`
-          idMap.set(n.id, newId)
-          // 从 data.bpmnType 推断节点类型
-          const bpmnType = n.data?.bpmnType
-          const nodeType = bpmnType === 'startEvent' ? 'start' : bpmnType === 'endEvent' ? 'end' : 'task'
-          return {
-            id: newId,
-            type: nodeType,
-            position: { x: n.x ?? 0, y: n.y ?? 0 },
-            data: n.data,
-          } as Node
-        })
-        const newEdges = edges.map((e: any) => {
-          const sourceId = idMap.get(e.source?.cell ?? '') ?? e.source?.cell ?? ''
-          const targetId = idMap.get(e.target?.cell ?? '') ?? e.target?.cell ?? ''
-          return {
-            id: `edge-${crypto.randomUUID()}`,
-            source: sourceId,
-            target: targetId,
-            label: e.data?.label,
-            data: {
-              conditionExpression: e.data?.conditionExpression,
-              isDefault: e.data?.isDefault,
-            },
-          } as Edge
-        })
-        // 逐个插入，保留当前画布已有的节点和边
-        for (const node of newNodes) {
+      const { nodes, edges } = convertFlowPayloadToVueFlow(
+        data.payload as { nodes?: unknown[]; edges?: unknown[] },
+      )
+      if (nodes.length > 0) {
+        for (const node of nodes) {
           graphStore.addNode(node)
         }
-        for (const edge of newEdges) {
+        for (const edge of edges) {
           graphStore.addEdge(edge)
         }
-        ElMessage.success(`已插入 ${newNodes.length} 个节点到流程`)
+        ElMessage.success(`已插入 ${nodes.length} 个节点到流程`)
         setTimeout(() => canvasRef.value?.fitView(), 100)
       }
     }
@@ -498,7 +533,8 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('flow:save', handleFlowSave)
   window.removeEventListener('message', handleAiReady)
-  // 移除 Socket 监听器
+  simulation.stopSimulation()
+  clearSimulationVisuals()
   offAiApply?.()
   offAiPublished?.()
 })

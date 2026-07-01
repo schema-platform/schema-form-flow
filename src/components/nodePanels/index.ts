@@ -5,7 +5,6 @@ export { default as ScriptTaskPanel } from './ScriptTaskPanel.vue'
 export { default as SendTaskPanel } from './SendTaskPanel.vue'
 export { default as ReceiveTaskPanel } from './ReceiveTaskPanel.vue'
 export { default as TimerEventPanel } from './TimerEventPanel.vue'
-export { default as GatewayPanel } from './GatewayPanel.vue'
 export { default as SubProcessPanel } from './SubProcessPanel.vue'
 
 export type { NodePanelProps, NodePanelEmits } from './types'

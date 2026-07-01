@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import styles from './AppLayout.module.scss'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import { useQiankunShell } from '@schema-platform/platform-shared/qiankun'
 
 const route = useRoute()
 const router = useRouter()
+const { isQiankunSubApp, goToShellHome } = useQiankunShell()
 
 const navItems = [
   { path: '/list', label: '流程列表', icon: 'document' },
@@ -45,6 +47,18 @@ const activeNav = computed(() => {
           <span>{{ item.label }}</span>
         </router-link>
       </nav>
+
+      <div v-if="isQiankunSubApp" :class="styles.sidebarFooter" data-test="sidebar-footer">
+        <button
+          type="button"
+          :class="[styles.navItem, styles.footerItem]"
+          title="返回主应用首页"
+          @click="goToShellHome"
+        >
+          <AppIcon name="home-filled" :size="18" />
+          <span>返回 Home</span>
+        </button>
+      </div>
     </aside>
     <main :class="styles.main" data-test="main">
       <router-view />

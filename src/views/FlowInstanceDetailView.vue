@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, nextTick, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
@@ -24,6 +24,7 @@ import {
 } from '../components/nodes/index.js'
 import { AnimatedEdge } from '../components/edges/index.js'
 import { useFlowExport } from '../composables/useFlowExport.js'
+import { resolveVueFlowNodeType } from '../utils/bpmnVueFlow.js'
 import styles from './FlowInstanceDetailView.module.scss'
 
 import '@vue-flow/core/dist/style.css'
@@ -41,6 +42,7 @@ const activeTab = ref('graph')
 const flowName = ref('')
 
 const vueFlowApi = ref<ReturnType<typeof useVueFlow> | null>(null)
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 function handlePaneReady(instance: ReturnType<typeof useVueFlow>) {
   vueFlowApi.value = instance
@@ -61,53 +63,17 @@ type ApprovalLog = ApprovalLogEntry & { createdAt: string | Date }
 const approvalLogs = ref<ApprovalLog[]>([])
 const logsLoading = ref(false)
 
-const SHAPE_TO_VF_TYPE: Record<string, string> = {
-  'bpmn-start-event': 'start-event',
-  'bpmn-end-event': 'end-event',
-  'bpmn-timer-event': 'timer-event',
-  'bpmn-user-task': 'user-task',
-  'bpmn-service-task': 'service-task',
-  'bpmn-script-task': 'script-task',
-  'bpmn-send-task': 'send-task',
-  'bpmn-receive-task': 'receive-task',
-  'bpmn-exclusive-gateway': 'exclusive-gateway',
-  'bpmn-parallel-gateway': 'parallel-gateway',
-  'bpmn-inclusive-gateway': 'inclusive-gateway',
-  'bpmn-sub-process': 'sub-process',
-}
-
-const VF_TYPES = new Set([
-  'start-event', 'end-event', 'timer-event',
-  'user-task', 'service-task', 'script-task', 'send-task', 'receive-task',
-  'exclusive-gateway', 'parallel-gateway', 'inclusive-gateway', 'sub-process',
-])
-
 function resolveNodeType(n: { type?: string; shape?: string; data?: unknown }): string {
-  if (n.type && VF_TYPES.has(n.type)) return n.type
-  if (n.shape && SHAPE_TO_VF_TYPE[n.shape]) return SHAPE_TO_VF_TYPE[n.shape]
-  const d = n.data as Record<string, unknown> | undefined
-  if (d?.bpmnType) {
-    const bpmnType = String(d.bpmnType)
-    const camelToKebab = bpmnType.replace(/([A-Z])/g, '-$1').toLowerCase()
-    if (VF_TYPES.has(camelToKebab)) return camelToKebab
-  }
-  return 'user-task'
+  return resolveVueFlowNodeType({
+    shape: n.shape,
+    type: n.type,
+    data: n.data as Record<string, unknown> | undefined,
+  })
 }
 
-onMounted(async () => {
-  await store.fetchInstanceDetail(instanceId.value)
+async function loadInstanceGraph() {
   const inst = store.currentInstance
   if (!inst) return
-
-  // Fetch flow definition name
-  if (inst.definitionId) {
-    try {
-      const def = (await flowApi.getFlow(inst.definitionId)) as { name?: string }
-      if (def?.name) flowName.value = def.name
-    } catch {
-      // definition fetch failure is non-critical
-    }
-  }
 
   if (inst.definitionId && inst.versionId) {
     try {
@@ -159,12 +125,50 @@ onMounted(async () => {
     }))
     graphEdges.value = []
   }
+}
+
+function startPollingIfRunning() {
+  stopPolling()
+  if (store.currentInstance?.status !== 'running') return
+  pollTimer = setInterval(async () => {
+    await store.fetchInstanceDetail(instanceId.value)
+    await loadInstanceGraph()
+  }, 4000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onMounted(async () => {
+  await store.fetchInstanceDetail(instanceId.value)
+  const inst = store.currentInstance
+  if (!inst) return
+
+  if (inst.definitionId) {
+    try {
+      const def = (await flowApi.getFlow(inst.definitionId)) as { name?: string }
+      if (def?.name) flowName.value = def.name
+    } catch {
+      // definition fetch failure is non-critical
+    }
+  }
+
+  await loadInstanceGraph()
+  startPollingIfRunning()
 
   await nextTick()
   const api = vueFlowApi.value
   if (api) {
     setTimeout(() => api.fitView({ padding: 0.2 }), 200)
   }
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 
 async function loadApprovalLogs() {
@@ -346,6 +350,10 @@ async function handleWithdraw() {
               :edges="graphEdges"
               fit-view-on-init
               :class="styles.flowGraph"
+              :nodes-connectable="false"
+              :nodes-draggable="false"
+              :edges-updatable="false"
+              :elements-selectable="false"
               @pane-ready="handlePaneReady"
             >
               <template #node-start-event="props"><StartEventNode v-bind="props" /></template>

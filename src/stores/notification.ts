@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { flowApi } from '../api/flowApi.js'
-import { connect, identify, onFlowNotification } from '@schema-platform/platform-shared/socket'
-import type { FlowNotificationEvent } from '@schema-platform/platform-shared/socket'
 
 export interface Notification {
   id: string
@@ -21,8 +19,6 @@ export const useNotificationStore = defineStore('notification', () => {
   const unreadCount = ref(0)
   const total = ref(0)
   const loading = ref(false)
-
-  let socketCleanup: (() => void) | null = null
 
   async function fetchUnreadCount() {
     try {
@@ -71,28 +67,6 @@ export const useNotificationStore = defineStore('notification', () => {
     unreadCount.value = 0
   }
 
-  function handleNewNotification(data: FlowNotificationEvent) {
-    // Increment unread count
-    unreadCount.value++
-    // Prepend to list if loaded
-    if (notifications.value.length > 0) {
-      notifications.value.unshift(data as Notification)
-    }
-  }
-
-  function initSocket(userId?: string) {
-    connect({ path: import.meta.env.PROD ? '/schema-platform/ws' : '/ws' })
-    if (userId) {
-      identify(userId)
-    }
-    socketCleanup = onFlowNotification(handleNewNotification)
-  }
-
-  function destroySocket() {
-    socketCleanup?.()
-    socketCleanup = null
-  }
-
   return {
     notifications,
     unreadCount,
@@ -103,7 +77,5 @@ export const useNotificationStore = defineStore('notification', () => {
     markAsRead,
     markBatchAsRead,
     markAllAsRead,
-    initSocket,
-    destroySocket,
   }
 })

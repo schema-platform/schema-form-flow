@@ -1,29 +1,23 @@
 <template>
   <div :class="$style.container">
     <div v-if="loading" :class="$style.loading">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <AppIcon name="loading" :class="$style.spin" :size="20" />
       <span>加载中...</span>
     </div>
 
     <template v-else-if="graph">
-      <!-- 流程图 -->
-      <VueFlow :nodes="nodes" :edges="edges" :class="$style.flow">
-        <template #node-bpmn-node="nodeProps">
-          <BpmnNode
-            v-bind="nodeProps"
-            :highlighted="currentNodeIds.includes(nodeProps.id)"
-            :completed="completedNodeIds.includes(nodeProps.id)"
-          />
-        </template>
-      </VueFlow>
+      <FlowGraphPreview
+        :graph="graph"
+        :active-node-ids="currentNodeIds"
+        :completed-node-ids="completedNodeIds"
+      />
 
-      <!-- 图例 -->
       <div :class="$style.legend">
         <span :class="$style.legendItem">
-          <span :class="[$style.dot, $style.current]"></span> 当前节点
+          <span :class="[$style.dot, $style.current]" /> 当前节点
         </span>
         <span :class="$style.legendItem">
-          <span :class="[$style.dot, $style.completed]"></span> 已完成
+          <span :class="[$style.dot, $style.completed]" /> 已完成
         </span>
       </div>
     </template>
@@ -35,29 +29,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Loading } from '@element-plus/icons-vue'
+import type { FlowGraph } from '@schema-platform/flow-shared'
 import { flowApi } from '../../api/flowApi'
+import FlowGraphPreview from '../../components/FlowGraphPreview.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const route = useRoute()
 
 const instanceId = computed(() => route.query.instanceId as string)
 
 const loading = ref(false)
-const graph = ref<any>(null)
+const graph = ref<FlowGraph | null>(null)
 const currentNodeIds = ref<string[]>([])
 const completedNodeIds = ref<string[]>([])
-
-const nodes = computed(() =>
-  graph.value?.nodes?.map((node: any) => ({
-    ...node,
-    class: currentNodeIds.value.includes(node.id) ? 'current' :
-           completedNodeIds.value.includes(node.id) ? 'completed' : '',
-  })) ?? []
-)
-
-const edges = computed(() => graph.value?.edges ?? [])
 
 async function loadPreview() {
   if (!instanceId.value) return
@@ -68,20 +54,19 @@ async function loadPreview() {
       flowApi.getInstanceGraph(instanceId.value),
       flowApi.getExecutionState(instanceId.value),
     ])
-    graph.value = graphData
+    graph.value = graphData as FlowGraph
     currentNodeIds.value = stateData.currentNodeIds ?? []
     completedNodeIds.value = stateData.completedNodeIds ?? []
   } catch (err) {
     console.error('Failed to load flow preview:', err)
+    graph.value = null
   } finally {
     loading.value = false
   }
 }
 
-// 监听 instanceId 变化
 watch(instanceId, loadPreview, { immediate: true })
 
-// 监听 postMessage（来自 Editor 宿主）
 function handleMessage(event: MessageEvent) {
   if (event.data?.type === 'highlight-node') {
     currentNodeIds.value = [event.data.nodeId]
@@ -90,6 +75,10 @@ function handleMessage(event: MessageEvent) {
 
 onMounted(() => {
   window.addEventListener('message', handleMessage)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('message', handleMessage)
 })
 </script>
 
@@ -104,48 +93,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   gap: 8px;
-  color: var(--el-text-color-secondary);
-}
-
-.flow {
-  width: 100%;
   height: 100%;
+  color: var(--text-color-secondary);
 }
 
-.legend {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  display: flex;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--el-bg-color);
-  border-radius: 6px;
-  box-shadow: var(--el-box-shadow-light);
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.current {
-  background: var(--el-color-primary);
-}
-
-.completed {
-  background: var(--el-color-success);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .empty {
@@ -153,6 +111,39 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--el-text-color-secondary);
+  color: var(--text-color-secondary);
+}
+
+.legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 16px;
+  padding: 6px 12px;
+  background: var(--bg-color);
+  border-radius: var(--border-radius-base);
+  border: 1px solid var(--border-color-lighter);
+  font-size: var(--font-size-xs);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.current {
+  background: var(--color-primary);
+}
+
+.completed {
+  background: var(--color-success);
 }
 </style>

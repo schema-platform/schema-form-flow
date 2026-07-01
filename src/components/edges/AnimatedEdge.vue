@@ -5,7 +5,8 @@ import styles from './AnimatedEdge.module.scss'
 
 const props = defineProps<EdgeProps>()
 
-const isAnimated = computed(() => props.data?.animated !== false)
+/** 仅显式 animated: true 时流动（设计器默认静态，仿真/运行时再开） */
+const isAnimated = computed(() => props.data?.animated === true)
 
 const path = computed(() => {
   return getSmoothStepPath({

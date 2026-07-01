@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import { computed } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
+
+vi.mock('@schema-platform/platform-shared/qiankun', () => ({
+  useQiankunShell: () => ({
+    isQiankunSubApp: computed(() => false),
+    goToShellHome: vi.fn(),
+  }),
+}))
 
 const stubs = {
   'router-link': {
@@ -110,5 +118,10 @@ describe('AppLayout', () => {
     expect(texts).toContain('流程列表')
     expect(texts).toContain('我的任务')
     expect(texts).toContain('流程监控')
+  })
+
+  it('does not show home footer in standalone mode', async () => {
+    const wrapper = await mountLayout()
+    expect(wrapper.find('[data-test="sidebar-footer"]').exists()).toBe(false)
   })
 })

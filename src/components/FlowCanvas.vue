@@ -101,30 +101,17 @@ import {
   SubProcessNode,
 } from './nodes/index.js'
 import { AnimatedEdge } from './edges/index.js'
+import { BPMN_SHAPE_TO_VF_TYPE } from '../utils/bpmnVueFlow.js'
 import styles from './FlowCanvas.module.scss'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 
-const BPMN_TYPE_TO_VF_TYPE: Record<string, string> = {
-  'bpmn-start-event': 'start-event',
-  'bpmn-end-event': 'end-event',
-  'bpmn-timer-event': 'timer-event',
-  'bpmn-user-task': 'user-task',
-  'bpmn-service-task': 'service-task',
-  'bpmn-script-task': 'script-task',
-  'bpmn-send-task': 'send-task',
-  'bpmn-receive-task': 'receive-task',
-  'bpmn-exclusive-gateway': 'exclusive-gateway',
-  'bpmn-parallel-gateway': 'parallel-gateway',
-  'bpmn-inclusive-gateway': 'inclusive-gateway',
-  'bpmn-sub-process': 'sub-process',
-}
-
 const defaultEdgeOptions = {
   type: 'animated-edge' as const,
   style: { stroke: 'var(--border-color)', strokeWidth: 1.5 },
   markerEnd: { type: MarkerType.ArrowClosed },
+  data: { animated: false },
 }
 
 const props = defineProps<{
@@ -213,10 +200,12 @@ onConnect((params) => {
   if (readOnly.value) return
   flowGraph.addEdge({
     id: `e-${params.source}-${params.target}`,
+    type: 'animated-edge',
     source: params.source,
     target: params.target,
     sourceHandle: params.sourceHandle,
     targetHandle: params.targetHandle,
+    data: { animated: false },
   })
 })
 
@@ -284,7 +273,7 @@ function onDrop(e: DragEvent) {
     height: number
   }
 
-  const vfType = BPMN_TYPE_TO_VF_TYPE[payload.shape]
+  const vfType = BPMN_SHAPE_TO_VF_TYPE[payload.shape]
   if (!vfType) return
 
   const position = screenToFlowCoordinate({

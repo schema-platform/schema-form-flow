@@ -173,7 +173,7 @@ function fetchDefinitions() {
       </div>
       <div :class="styles.headerActions">
         <el-button type="primary" @click="handleCreate">
-          <AppIcon name="plus" class="el-icon--left" />新建流程
+          <AppIcon name="plus" class="el-icon--left" />新建
         </el-button>
       </div>
     </div>

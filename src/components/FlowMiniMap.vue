@@ -1,27 +1,24 @@
 <template>
   <div :class="$style.container">
     <div v-if="loading" :class="$style.loading">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <AppIcon name="loading" :class="$style.spin" :size="20" />
     </div>
-
-    <div v-else-if="graph" :class="$style.flowContainer">
-      <VueFlow :nodes="nodes" :edges="edges" :class="$style.flow">
-        <template #node-bpmn-node="nodeProps">
-          <BpmnNode
-            v-bind="nodeProps"
-            :highlighted="currentNodeId === nodeProps.id"
-            :completed="completedNodes.includes(nodeProps.id)"
-          />
-        </template>
-      </VueFlow>
-    </div>
+    <FlowGraphPreview
+      v-else-if="graph"
+      :graph="graph"
+      :active-node-ids="activeNodeIds"
+      :completed-node-ids="completedNodeIds"
+      compact
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { Loading } from '@element-plus/icons-vue'
+import { ref, watch } from 'vue'
+import type { FlowGraph } from '@schema-platform/flow-shared'
 import { flowApi } from '../api/flowApi'
+import FlowGraphPreview from './FlowGraphPreview.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const props = defineProps<{
   instanceId: string
@@ -29,18 +26,9 @@ const props = defineProps<{
 }>()
 
 const loading = ref(false)
-const graph = ref<any>(null)
-const completedNodes = ref<string[]>([])
-
-const nodes = computed(() =>
-  graph.value?.nodes?.map((node: any) => ({
-    ...node,
-    class: node.id === props.currentNodeId ? 'current' :
-           completedNodes.value.includes(node.id) ? 'completed' : '',
-  })) ?? []
-)
-
-const edges = computed(() => graph.value?.edges ?? [])
+const graph = ref<FlowGraph | null>(null)
+const activeNodeIds = ref<string[]>([])
+const completedNodeIds = ref<string[]>([])
 
 async function loadGraph() {
   if (!props.instanceId) return
@@ -51,16 +39,21 @@ async function loadGraph() {
       flowApi.getInstanceGraph(props.instanceId),
       flowApi.getExecutionState(props.instanceId),
     ])
-    graph.value = graphData
-    completedNodes.value = stateData.completedNodeIds ?? []
+    graph.value = graphData as FlowGraph
+    activeNodeIds.value = stateData.currentNodeIds ?? (props.currentNodeId ? [props.currentNodeId] : [])
+    completedNodeIds.value = stateData.completedNodeIds ?? []
   } catch (err) {
     console.error('Failed to load flow graph:', err)
+    graph.value = null
   } finally {
     loading.value = false
   }
 }
 
 watch(() => props.instanceId, loadGraph, { immediate: true })
+watch(() => props.currentNodeId, (id) => {
+  if (id) activeNodeIds.value = [id]
+})
 </script>
 
 <style module>
@@ -68,6 +61,7 @@ watch(() => props.instanceId, loadGraph, { immediate: true })
   width: 100%;
   height: 100%;
   position: relative;
+  min-height: 200px;
 }
 
 .loading {
@@ -77,13 +71,11 @@ watch(() => props.instanceId, loadGraph, { immediate: true })
   height: 100%;
 }
 
-.flowContainer {
-  width: 100%;
-  height: 100%;
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-.flow {
-  width: 100%;
-  height: 100%;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

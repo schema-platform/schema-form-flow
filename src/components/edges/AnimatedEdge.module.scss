@@ -5,7 +5,7 @@
 }
 
 .edgeStatic {
-  /* solid line, no animation */
+  stroke-dasharray: 8 4;
 }
 
 @keyframes dash-flow {

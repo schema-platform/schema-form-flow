@@ -1,0 +1,102 @@
+/* 流程图节点/连线运行时状态（设计器仿真 + 实例详情共用） */
+
+.node-running {
+  box-shadow: 0 0 0 2px var(--color-primary),
+              0 0 12px rgba(var(--color-primary-rgb), 0.4);
+  animation: flow-node-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+.node-running::before {
+  content: '\23F0';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  z-index: 10;
+  border: 2px solid var(--bg-color-white);
+  box-shadow: var(--shadow-sm);
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--bg-color-white);
+}
+
+@keyframes flow-node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--color-primary),
+                0 0 12px rgba(var(--color-primary-rgb), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--color-primary),
+                0 0 24px rgba(var(--color-primary-rgb), 0.6);
+  }
+}
+
+.node-completed {
+  box-shadow: 0 0 0 2px var(--color-success);
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+.node-completed::after {
+  content: '\2713';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-success);
+  color: var(--bg-color-white);
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-weight: 700;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.node-failed {
+  box-shadow: 0 0 0 2px var(--color-danger, #f56c6c);
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+.node-waiting {
+  opacity: 0.6;
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+.edge-active .vue-flow__edge-path {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.5));
+}
+
+.edge-completed .vue-flow__edge-path {
+  stroke: var(--color-success) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: none !important;
+  animation: none !important;
+}
+
+.edge-pending .vue-flow__edge-path {
+  stroke: var(--border-color-light) !important;
+  stroke-width: 1.5 !important;
+  stroke-dasharray: 6 4 !important;
+  animation: none !important;
+}
+
+.edge-failed .vue-flow__edge-path {
+  stroke: var(--color-danger, #f56c6c) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(245, 108, 108, 0.5));
+}

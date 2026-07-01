@@ -63,6 +63,20 @@
   border-top: 1px solid var(--bg-color-page);
 }
 
+.footerItem {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-color-secondary, var(--text-color-regular));
+  font-size: 13px;
+  text-align: left;
+}
+
+.footerItem:hover {
+  background: var(--bg-color-gray);
+  color: var(--text-color-title);
+}
+
 .main {
   flex: 1;
   min-width: 0;

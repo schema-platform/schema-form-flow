@@ -93,36 +93,29 @@ import {
   SubProcessNode,
 } from './nodes/index.js'
 import { AnimatedEdge } from './edges/index.js'
+import { resolveVueFlowNodeType } from '../utils/bpmnVueFlow.js'
 import styles from './FlowGraphPreview.module.scss'
-
-const BPMN_SHAPE_TO_VF_TYPE: Record<string, string> = {
-  'bpmn-start-event': 'start-event',
-  'bpmn-end-event': 'end-event',
-  'bpmn-timer-event': 'timer-event',
-  'bpmn-user-task': 'user-task',
-  'bpmn-service-task': 'service-task',
-  'bpmn-script-task': 'script-task',
-  'bpmn-send-task': 'send-task',
-  'bpmn-receive-task': 'receive-task',
-  'bpmn-exclusive-gateway': 'exclusive-gateway',
-  'bpmn-parallel-gateway': 'parallel-gateway',
-  'bpmn-inclusive-gateway': 'inclusive-gateway',
-  'bpmn-sub-process': 'sub-process',
-}
 
 const defaultEdgeOptions = {
   type: 'animated-edge' as const,
   style: { stroke: 'var(--border-color)', strokeWidth: 1.5 },
   markerEnd: { type: MarkerType.ArrowClosed },
+  data: { animated: false },
 }
 
 const props = withDefaults(defineProps<{
   graph?: FlowGraph | null
   highlightNodeIds?: string[]
+  /** 当前活动节点（运行时/嵌入预览） */
+  activeNodeIds?: string[]
+  /** 已完成节点 */
+  completedNodeIds?: string[]
   compact?: boolean
 }>(), {
   graph: null,
   highlightNodeIds: () => [],
+  activeNodeIds: () => [],
+  completedNodeIds: () => [],
   compact: false,
 })
 
@@ -131,39 +124,56 @@ const flowId = `flow-preview-${Math.random().toString(36).slice(2, 8)}`
 
 const { fitView } = useVueFlow({ id: flowId })
 
-function resolveNodeType(shape: string): string {
-  if (BPMN_SHAPE_TO_VF_TYPE[shape]) return BPMN_SHAPE_TO_VF_TYPE[shape]
-  if (shape?.startsWith('bpmn-')) {
-    const vfType = shape.slice(5)
-    if (BPMN_SHAPE_TO_VF_TYPE[`bpmn-${vfType}`]) return vfType
+function resolveNodeClass(nodeId: string): string {
+  if (props.activeNodeIds.includes(nodeId)) return 'node-running'
+  if (props.completedNodeIds.includes(nodeId)) return 'node-completed'
+  if (props.highlightNodeIds.includes(nodeId)) return 'highlighted'
+  return ''
+}
+
+function resolveEdgeClass(sourceId: string, targetId: string): { class: string; animated: boolean } {
+  const activeSet = new Set(props.activeNodeIds)
+  const completedSet = new Set(props.completedNodeIds)
+  if (activeSet.has(targetId) && completedSet.has(sourceId)) {
+    return { class: 'edge-active', animated: true }
   }
-  return 'user-task'
+  if (completedSet.has(sourceId) && completedSet.has(targetId)) {
+    return { class: 'edge-completed', animated: false }
+  }
+  return { class: 'edge-pending', animated: false }
 }
 
 const vfNodes = computed(() => {
   const graphNodes = props.graph?.nodes ?? []
   return graphNodes.map((n) => ({
     id: n.id,
-    type: resolveNodeType(n.shape),
+    type: resolveVueFlowNodeType({ shape: n.shape, data: n.data as unknown as Record<string, unknown> }),
     position: { x: n.x, y: n.y },
     data: { ...n.data, label: n.data?.label ?? n.id },
-    class: props.highlightNodeIds.includes(n.id) ? 'highlighted' : '',
+    class: resolveNodeClass(n.id),
   }))
 })
 
 const vfEdges = computed(() => {
   const graphEdges = props.graph?.edges ?? []
-  return graphEdges.map((e) => ({
-    id: e.id,
-    source: e.source.cell,
-    target: e.target.cell,
-    label: e.data?.label,
-    data: {
-      conditionExpression: e.data?.conditionExpression,
-      isDefault: e.data?.isDefault,
-    },
-    class: '',
-  }))
+  return graphEdges.map((e) => {
+    const sourceId = e.source.cell
+    const targetId = e.target.cell
+    const { class: edgeClass, animated } = resolveEdgeClass(sourceId, targetId)
+    return {
+      id: e.id,
+      source: sourceId,
+      target: targetId,
+      type: 'animated-edge',
+      label: e.data?.label,
+      class: edgeClass,
+      data: {
+        conditionExpression: e.data?.conditionExpression,
+        isDefault: e.data?.isDefault,
+        animated,
+      },
+    }
+  })
 })
 
 const hasNodes = computed(() => (props.graph?.nodes?.length ?? 0) > 0)
